@@ -2,7 +2,7 @@
   "name": "pi-workmap",
   "version": "0.1.0",
   "description": "A live, agent-maintained workmap for human-agent alignment in Pi sessions.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "pi-package",
     "pi-extension",
