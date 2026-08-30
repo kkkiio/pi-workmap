@@ -1,6 +1,6 @@
 # ADR 0004: workmap 状态注入的通道与频率（待定）
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-30
 
 ## Context
@@ -48,7 +48,7 @@ Workmap 的内容需要持续到达模型。当前实现是 `pi.on("context")` �
 每 turn 开头把 workmap 状态写为持久隐藏 custom message，复刻 oh-my-pi 语义。
 
 - 优点：一次注入整 turn 可见；DeepSeek 链式命中完整；Anthropic/OpenAI 上注入内容算一次后白嫖；pi 原生支持（custom message + `registerMessageRenderer` 可渲染为淡色提示行）。
-- 缺点：transcript 混入系统消息——对话记录不再纯粹是人与 Agent 的对话，导出、分享、审计时需要过滤；compaction 会把注入内容压掉，需要重建机制。注意：仓库中并未文档化“不污染对话记录”的原则（已有的“不污染”均指 repository 与跨 session 状态，见 ADR 0001 与 product-boundary.md），是否接受系统消息进入对话记录是一个尚未作出的产品决定。
+- 缺点：transcript 混入系统消息——导出、分享、审计时需要按 customType 过滤；compaction 会把注入内容压掉，靠重置去重标记在下一个 run 重建。系统消息进入 history 是 harness 的标准实践（oh-my-pi 每 turn 注入多条；pi 自身持久化 custom 消息），不构成原则冲突，但需要遵守上述卫生惯例。
 
 ## 无论选哪个都已确定的原则
 
@@ -59,10 +59,12 @@ Workmap 的内容需要持续到达模型。当前实现是 `pi.on("context")` �
 
 ## Decision
 
-**待定**，在 A 与 D 之间选择。选择标准是真实使用中的对齐效果与缓存实测（DeepSeek 的 `usage.prompt_cache_hit_tokens` 可直接测量各方案的命中差异）。B 与 C 记录为已评估的备选：B 在单元匹配语义下价值不足，C 是被否定的现状。
+采用 **D：persisted 注入**。每个 agent run 开头，若 workmap 非空且内容较上次注入有变化，将状态写为一条 `display: false` 的 custom message（customType `pi-workmap-context`），位置在用户消息之后；内容未变时不重复写。多副本只在 map 变化时出现，而每次变化都紧跟模型自己的 `workmap update` 调用，取代关系在 transcript 中自明，因此消息文本不加版本/位置标记（与 oh-my-pi `<todo_context>` 的做法一致），只用正面定性（state anchor, not conversation to react to）。`session_before_compact` 时重置去重标记，使 compaction 后的下一个 run 重新注入。
+
+ephemeral 的 `context` 事件注入随之移除。B 与 C 记录为已评估的备选：B 在单元匹配语义下价值不足，C 是被否定的现状。
+
+卫生惯例（与 oh-my-pi 等 harness 一致）：`display: false` 对人隐藏、customType 可分类过滤、内容去重、导出时按 customType 剔除。系统消息进入对话记录是该生态的标准实践，不构成产品原则冲突。
 
 ## Consequences
 
-- 本 ADR 记录前，"ephemeral 每请求注入"是未评估的初始实现；本 ADR 之后，任何注入通道/频率的变更都应对照上表更新。
-- 若选 A：实现成本低（flag 门控 + `session_before_compact`），turn 内可见性损失靠 `view` 兜底。
-- 若选 D：需要设计持久消息的生命周期（何时写、何时被视为过期、compaction 后如何重建），以及 renderer 与导出过滤。
+- 本 ADR 记录前，“ephemeral 每请求注入”是未评估的初始实现；本 ADR 之后，任何注入通道/频率的变更都应对照上表更新。

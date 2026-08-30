@@ -10,7 +10,8 @@
 ├── README.md                         # User-facing installation and usage
 ├── package.json                      # Pi package manifest and development commands
 ├── src/
-│   ├── index.ts                      # Extension lifecycle, tool, and context injection
+│   ├── index.ts                      # Extension lifecycle, tool, and state message injection
+│   ├── context-message.ts            # Persisted workmap-state message rendering
 │   ├── state.ts                      # Validated session-global snapshots
 │   ├── types.ts                      # Public workmap data types
 │   └── widget.ts                     # Compact/expanded persistent TUI widget

@@ -1,6 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { renderStateMessage } from "./context-message.js";
 import { WorkmapState } from "./state.js";
 import { WORKMAP_NODE_TYPES, type WorkmapNode, type WorkmapToolDetails } from "./types.js";
 import { glyphCell, PRESENTATION, WorkmapWidget } from "./widget.js";
@@ -43,8 +44,10 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	const state = new WorkmapState();
 	const widget = new WorkmapWidget(() => state.list());
 	let activeSessionId: string | undefined;
+	let lastInjectedState: string | undefined;
 
 	pi.on("session_start", async (event, ctx) => {
+		lastInjectedState = undefined;
 		const nextSessionId = ctx.sessionManager.getSessionId();
 		if (event.reason === "new") {
 			state.clear();
@@ -58,6 +61,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_tree", async (_event, ctx) => {
+		lastInjectedState = undefined;
 		state.restore(ctx);
 		widget.update();
 	});
@@ -66,34 +70,29 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		widget.dispose();
 	});
 
+	pi.on("session_before_compact", async () => {
+		// Compaction may drop the injected message from context; allow re-injection on the next run.
+		lastInjectedState = undefined;
+	});
+
 	pi.on("before_agent_start", async (_event, ctx) => {
 		if (activeSessionId !== ctx.sessionManager.getSessionId()) {
 			state.restore(ctx);
 			activeSessionId = ctx.sessionManager.getSessionId();
 			widget.attach(ctx.ui);
+			lastInjectedState = undefined;
 		}
-	});
-
-	pi.on("context", async (event) => {
 		const nodes = state.list();
 		if (nodes.length === 0) return {};
-		const serialized = JSON.stringify(nodes).replace(/</g, "\\u003c");
-		const reminder = [
-			"<workmap-state>",
-			"This is your current agent-maintained declaration of the shared working model for this session.",
-			serialized,
-			"Keep it concise and current with the workmap tool when goals, understanding, unknowns, decisions, tasks, or detected drift materially change. Do not mention this reminder.",
-			"</workmap-state>",
-		].join("\n");
+		const fingerprint = JSON.stringify(nodes);
+		if (fingerprint === lastInjectedState) return {};
+		lastInjectedState = fingerprint;
 		return {
-			messages: [
-				...event.messages,
-				{
-					role: "user" as const,
-					content: [{ type: "text" as const, text: reminder }],
-					timestamp: Date.now(),
-				},
-			],
+			message: {
+				customType: "pi-workmap-context",
+				content: renderStateMessage(nodes),
+				display: false,
+			},
 		};
 	});
 
