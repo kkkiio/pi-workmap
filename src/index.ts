@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { type ExtensionAPI, SessionManager } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { renderStateMessage } from "./context-message.js";
@@ -51,10 +51,11 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		const nextSessionId = ctx.sessionManager.getSessionId();
 		if (event.reason === "new") {
 			state.clear();
-		} else if (event.reason === "fork" && activeSessionId && activeSessionId !== nextSessionId) {
+		} else if (event.reason === "fork" && event.previousSessionFile) {
+			state.restore(SessionManager.open(event.previousSessionFile));
 			state.persist(pi);
 		} else {
-			state.restore(ctx);
+			state.restore(ctx.sessionManager);
 		}
 		activeSessionId = nextSessionId;
 		widget.attach(ctx.ui);
@@ -62,7 +63,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 
 	pi.on("session_tree", async (_event, ctx) => {
 		lastInjectedState = undefined;
-		state.restore(ctx);
+		state.restore(ctx.sessionManager);
 		widget.update();
 	});
 
@@ -77,7 +78,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 
 	pi.on("before_agent_start", async (_event, ctx) => {
 		if (activeSessionId !== ctx.sessionManager.getSessionId()) {
-			state.restore(ctx);
+			state.restore(ctx.sessionManager);
 			activeSessionId = ctx.sessionManager.getSessionId();
 			widget.attach(ctx.ui);
 			lastInjectedState = undefined;
