@@ -3,7 +3,7 @@ import { Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { WorkmapState } from "./state.js";
 import { WORKMAP_NODE_TYPES, type WorkmapNode, type WorkmapToolDetails } from "./types.js";
-import { WorkmapWidget } from "./widget.js";
+import { glyphCell, PRESENTATION, WorkmapWidget } from "./widget.js";
 
 const NodeTypeSchema = Type.Union(WORKMAP_NODE_TYPES.map((type) => Type.Literal(type)));
 const NodeSchema = Type.Object(
@@ -107,8 +107,9 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		promptGuidelines: [
 			"Proactively update workmap after material changes to your goal, understanding, unknowns, decisions, tasks, or detected alignment drift; do not wait for the user to ask.",
 			"Treat workmap as current shared situation awareness, not a history, todo log, project memory, or chain-of-thought. Remove nodes that no longer affect the current direction.",
-			"Use goal for intended outcomes (status may be current or long-term), understanding for current facts/models/hypotheses, unknown for factual questions, decision for deliberation or commitments, option only for considered decision alternatives, task for current action, and drift only for a detected mismatch with user intent or the declared map.",
+			"Use goal for intended outcomes (status may be current or long-term), understanding for current facts/models/hypotheses, unknown for factual questions, decision for deliberation or commitments, option only for considered decision alternatives, task for current action, and drift only for a detected mismatch with user intent or the declared map. Keep a drift while the user has not responded; remove it once the mismatch resolves through correction or completion of the affected work, and when the user accepts the current direction, record any lasting conclusion as a decision or understanding before removing the drift.",
 			"Use stable semantic snake_case ids, concise titles, optional short free-form status labels, and note only when one or two sentences materially improve alignment. Nest freely only when the information reads more clearly as a tree.",
+			"Prefer restrained conventional status labels such as current, long-term, open, investigating, considering, chosen, active, blocked, or done. Record blocked work as a task status with the reason in note or as its own unknown or decision node, and when work cannot proceed without the user, stop and ask in conversation instead of only marking the map.",
 		],
 		parameters: WorkmapParams,
 		executionMode: "sequential",
@@ -165,7 +166,25 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			if (details.error) return new Text(theme.fg("error", details.error), 0, 0);
 			let text = theme.fg("success", details.changed ? "Workmap updated" : "Workmap unchanged");
 			if (expanded && details.nodes.length > 0) {
-				text += `\n${details.nodes.map((node) => `${node.id} · ${node.type} · ${node.title}`).join("\n")}`;
+				const byId = new Map(details.nodes.map((node) => [node.id, node]));
+				const depth = (node: WorkmapNode): number => {
+					let level = 0;
+					let parentId = node.parentId;
+					while (parentId && level < 16) {
+						const parent = byId.get(parentId);
+						if (!parent) break;
+						level += 1;
+						parentId = parent.parentId;
+					}
+					return level;
+				};
+				const rows = details.nodes.map((node) => {
+					const presentation = PRESENTATION[node.type];
+					const indent = "  ".repeat(depth(node));
+					const status = node.status ? theme.fg("dim", ` ${node.status}`) : "";
+					return `${indent}${theme.fg(presentation.glyphColor, glyphCell(node.type))} ${theme.fg("text", node.title)}${status} ${theme.fg("dim", node.id)}`;
+				});
+				text += `\n${rows.join("\n")}`;
 			} else {
 				text += theme.fg("dim", ` · ${details.nodes.length} signals`);
 			}

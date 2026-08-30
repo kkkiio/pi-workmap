@@ -1,15 +1,6 @@
 # Open Questions
 
-## 已确定的产品选择
-
-- Workmap 由 LLM Agent 主动维护，human 通过对话检查和纠正。
-- 一个 session 可有多个平级 Goal；Goal 不强制组织其他节点，也不增加 Workstream。
-- V1 使用 single-parent tree，不提供 refs、cross-reference 或 DAG UI。
-- Node types 是 Goal、Understanding、Unknown、Decision、Option、Task 与 Drift。
-- Finding 并入 Understanding；Blocker 并入 Task status/note；LongTermGoal 表示为 `Goal · long-term`。
-- Option 是 Decision 的 considered alternative；Unknown 的临时答案写作 `Understanding · hypothesis`。
-- 同一 session 的 `/tree` 分支共享最新状态；resume 恢复，fork 继承后独立，新 session 为空。
-- widget 常驻且 display-only，复用 Pi 官方 `Ctrl+O` compact / expanded 状态。
+已确定的产品决策以 ADR 形式记录在 [adr/](adr/)；领域术语见 [AGENTS.md](../AGENTS.md) 的 Domain Language。本页只记录仍需通过真实使用验证的问题。
 
 ## 仍需通过使用验证
 
@@ -27,7 +18,11 @@
 
 ### Drift discoverability
 
-Agent 是否能可靠识别自己与 user intent 的真实偏差，而不是只记录抽象风险？需要特别观察用户纠正后，Agent 是否及时新增、解释并清理 Drift。
+Agent 是否能可靠识别自己与 user intent 的真实偏差，而不是只记录抽象风险？需要特别观察用户纠正后，Agent 是否及时新增、解释并清理 Drift。Drift 的参照是对话中声明的意图与现行 map，用户沉默不代表接受；需要观察的是：用户接受后，Agent 是否把结论转为 Decision 或 Understanding 再删除 drift，以及 drift 长期存在时 Agent 是否会主动在对话中确认方向。
+
+### Escalation reliability
+
+硬阻塞依赖 Agent 主动停下来在对话中提问（见 ADR 0003）。需要观察：Agent 遇到没有用户就无法继续的情况时，是停下问，还是只把 Task 标成 `blocked` 继续干别的；以及 blocked 面包屑是否真的指向对话中等待的那个问题。
 
 ### Fork edge cases
 

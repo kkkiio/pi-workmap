@@ -3,7 +3,14 @@ import { type TUI, truncateToWidth, visibleWidth, wrapTextWithAnsi } from "@eare
 import type { WorkmapNode, WorkmapNodeType } from "./types.js";
 
 const COMPACT_NODE_LIMIT = 5;
-const PRESENTATION: Record<WorkmapNodeType, { glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }> = {
+// Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
+const MIN_LEFT_WIDTH = 20;
+// Every glyph occupies a two-column cell so double-width glyphs (⚡) keep titles left-aligned.
+const GLYPH_CELL_WIDTH = 2;
+export const PRESENTATION: Record<
+	WorkmapNodeType,
+	{ glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }
+> = {
 	goal: { glyph: "◎", glyphColor: "accent" },
 	understanding: { glyph: "•", glyphColor: "text" },
 	unknown: { glyph: "?", glyphColor: "warning" },
@@ -21,6 +28,11 @@ const COMPACT_PRIORITY: Record<WorkmapNodeType, number> = {
 	understanding: 5,
 	option: 6,
 };
+
+export function glyphCell(type: WorkmapNodeType): string {
+	const { glyph } = PRESENTATION[type];
+	return glyph + " ".repeat(Math.max(0, GLYPH_CELL_WIDTH - visibleWidth(glyph)));
+}
 
 export class WorkmapWidget {
 	private ui: ExtensionUIContext | undefined;
@@ -75,8 +87,7 @@ export class WorkmapWidget {
 			const nodes = this.getNodes();
 			if (nodes.length === 0 || width < 8) return [];
 			const expanded = this.ui?.getToolsExpanded() ?? false;
-			const driftCount = nodes.filter((node) => node.type === "drift").length;
-			const summary = `Workmap · ${nodes.length} signals${driftCount ? ` · ${driftCount} drift` : ""}`;
+			const summary = this.renderSummary(nodes, theme);
 			const shortcut = keyText("app.tools.expand");
 			const hint = shortcut ? `${shortcut} ${expanded ? "compact" : "expand"}` : expanded ? "expanded" : "compact";
 			const lines = [this.align(theme.fg("accent", theme.bold(summary)), theme.fg("dim", hint), width)];
@@ -90,7 +101,8 @@ export class WorkmapWidget {
 					);
 				const visible = ranked.slice(0, COMPACT_NODE_LIMIT).map(({ node }) => node);
 				for (const node of visible) lines.push(this.renderNode(node, "", width, theme));
-				if (nodes.length > visible.length) lines.push(theme.fg("dim", `  … ${nodes.length - visible.length} more`));
+				const hidden = ranked.slice(COMPACT_NODE_LIMIT).map(({ node }) => node);
+				if (hidden.length > 0) lines.push(theme.fg("dim", `  ${this.summarizeHidden(hidden)}`));
 				return lines.map((line) => truncateToWidth(line, width));
 			}
 
@@ -124,16 +136,32 @@ export class WorkmapWidget {
 		}
 	}
 
+	private renderSummary(nodes: WorkmapNode[], theme: Theme): string {
+		const driftCount = nodes.filter((node) => node.type === "drift").length;
+		const base = theme.fg("accent", theme.bold(`Workmap · ${nodes.length} signals`));
+		if (!driftCount) return base;
+		return `${base} ${theme.fg("error", theme.bold(`· ${driftCount} drift`))}`;
+	}
+
+	private summarizeHidden(hidden: WorkmapNode[]): string {
+		const counts = new Map<WorkmapNodeType, number>();
+		for (const node of hidden) counts.set(node.type, (counts.get(node.type) ?? 0) + 1);
+		const parts = [...counts.entries()]
+			.sort((left, right) => COMPACT_PRIORITY[left[0]] - COMPACT_PRIORITY[right[0]])
+			.map(([type, count]) => `${count} ${type}${count === 1 ? "" : "s"}`);
+		return `… ${hidden.length} more · ${parts.join(" · ")}`;
+	}
+
 	private renderNode(node: WorkmapNode, prefix: string, width: number, theme: Theme): string {
 		const presentation = PRESENTATION[node.type];
-		const left = `${theme.fg("dim", prefix)}${theme.fg(presentation.glyphColor, presentation.glyph)} ${theme.fg("text", node.title)}`;
+		const left = `${theme.fg("dim", prefix)}${theme.fg(presentation.glyphColor, glyphCell(node.type))} ${theme.fg("text", node.title)}`;
 		if (!node.status) return truncateToWidth(left, width);
 		return this.align(left, theme.fg("dim", node.status), width);
 	}
 
 	private align(left: string, right: string, width: number): string {
 		const rightWidth = visibleWidth(right);
-		if (!right || rightWidth + 8 >= width) return truncateToWidth(left, width);
+		if (!right || rightWidth + MIN_LEFT_WIDTH + 2 > width) return truncateToWidth(left, width);
 		const availableLeft = Math.max(1, width - rightWidth - 2);
 		const clippedLeft = truncateToWidth(left, availableLeft);
 		const gap = Math.max(2, width - visibleWidth(clippedLeft) - rightWidth);

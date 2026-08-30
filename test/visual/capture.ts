@@ -53,8 +53,6 @@ try {
 		if (attempt === 79) throw new Error("Timed out waiting for the workmap widget");
 		await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
 	}
-	await exec("tmux", ["send-keys", "-t", `${sessionName}:0.0`, "C-o"]);
-	await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
 	await exec("tmux", [
 		"send-keys",
 		"-t",
@@ -63,13 +61,29 @@ try {
 		"Compare server and client trade-offs before changing code",
 	]);
 	await new Promise((resolvePromise) => setTimeout(resolvePromise, 200));
+	await mkdir(join(root, "docs/assets"), { recursive: true });
+	const renderer = await TerminalRenderer.start();
+	try {
+		await capture(renderer, "workmap-session-compact.png");
+		await exec("tmux", ["send-keys", "-t", `${sessionName}:0.0`, "C-o"]);
+		await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
+		await capture(renderer, "workmap-session.png");
+	} finally {
+		await renderer.close();
+	}
+} finally {
+	await exec("tmux", ["kill-session", "-t", sessionName]).catch(() => undefined);
+	await rm(temporary, { recursive: true, force: true });
+}
+
+async function capture(renderer: TerminalRenderer, outputName: string): Promise<void> {
 	const { stdout: ansi } = await exec("tmux", ["capture-pane", "-p", "-e", "-t", `${sessionName}:0.0`], {
 		maxBuffer: 1024 * 1024,
 	});
 	const captured = ansi.replace(/\r/g, "").split("\n");
 	const plain = captured.map((line) => line.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, ""));
 	const start = plain.findIndex((line) => line.includes("Workmap · 9 signals"));
-	if (start < 0) throw new Error("Expanded workmap was not present in the captured terminal");
+	if (start < 0) throw new Error(`Workmap widget was not present in the captured terminal for ${outputName}`);
 	const border = plain.findIndex((line, index) => index > start && line.startsWith("─"));
 	if (border < 0) throw new Error("Could not locate the editor boundary below the workmap");
 	const lastContentRow = plain.findLastIndex((line) => line.trim().length > 0);
@@ -77,15 +91,5 @@ try {
 		.slice(0, lastContentRow + 1)
 		.join("\n")
 		.replaceAll(demoCwd, "~/projects/auth-service");
-	const outputPath = join(root, "docs/assets/workmap-session.png");
-	await mkdir(dirname(outputPath), { recursive: true });
-	const renderer = await TerminalRenderer.start();
-	try {
-		await renderer.screenshot(content, columns, lastContentRow + 1, outputPath);
-	} finally {
-		await renderer.close();
-	}
-} finally {
-	await exec("tmux", ["kill-session", "-t", sessionName]).catch(() => undefined);
-	await rm(temporary, { recursive: true, force: true });
+	await renderer.screenshot(content, columns, lastContentRow + 1, join(root, "docs/assets", outputName));
 }

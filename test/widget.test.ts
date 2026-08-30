@@ -1,5 +1,5 @@
 import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
-import type { Component, TUI } from "@earendil-works/pi-tui";
+import { type Component, type TUI, visibleWidth } from "@earendil-works/pi-tui";
 import { describe, expect, it, vi } from "vitest";
 import type { WorkmapNode } from "../src/types.js";
 import { WorkmapWidget } from "../src/widget.js";
@@ -13,7 +13,7 @@ const nodes: WorkmapNode[] = [
 	{ id: "display_mode", type: "unknown", title: "How many compact rows remain readable?", status: "open" },
 ];
 
-function renderWidget(expanded: boolean): { lines: string[]; requestRender: ReturnType<typeof vi.fn> } {
+function renderWidget(expanded: boolean, width = 78): { lines: string[]; requestRender: ReturnType<typeof vi.fn> } {
 	let factory: ((tui: TUI, theme: Theme) => Component) | undefined;
 	const requestRender = vi.fn();
 	const ui = {
@@ -32,7 +32,7 @@ function renderWidget(expanded: boolean): { lines: string[]; requestRender: Retu
 	widget.attach(ui);
 	const component = factory?.({ requestRender } as unknown as TUI, theme);
 	if (!component) throw new Error("Widget factory was not registered");
-	return { lines: component.render(78), requestRender };
+	return { lines: component.render(width), requestRender };
 }
 
 describe("WorkmapWidget", () => {
@@ -59,7 +59,37 @@ describe("WorkmapWidget", () => {
 		const output = lines.join("\n");
 
 		expect(output).toContain("Tree navigation must not roll back the map");
-		expect(output).toContain("└─ □ Render the persistent widget");
+		expect(output).toContain("└─ □  Render the persistent widget");
 		expect(output).toContain("The widget stays above the editor");
+	});
+
+	it("describes hidden compact nodes by type", () => {
+		const { lines } = renderWidget(false);
+		expect(lines.at(-1)).toBe("  … 1 more · 1 understanding");
+	});
+
+	it("aligns every title to the same column despite double-width glyphs", () => {
+		const { lines } = renderWidget(false);
+		for (const node of nodes) {
+			const line = lines.find((candidate) => candidate.includes(node.title));
+			if (!line) continue;
+			expect(visibleWidth(line.slice(0, line.indexOf(node.title)))).toBe(3);
+		}
+	});
+
+	it("drops statuses and the hint before squeezing titles on narrow widths", () => {
+		const { lines } = renderWidget(false, 24);
+		const output = lines.join("\n");
+
+		expect(output).toContain("Workmap");
+		expect(output).not.toContain("long-term");
+		expect(output).not.toContain("detected");
+		expect(lines[1].startsWith("◎  Keep human")).toBe(true);
+	});
+
+	it("keeps statuses right-aligned when there is room", () => {
+		const { lines } = renderWidget(false, 60);
+		const goal = lines.find((line) => line.includes("Keep human and Agent aligned"));
+		expect(goal?.endsWith("long-term")).toBe(true);
 	});
 });

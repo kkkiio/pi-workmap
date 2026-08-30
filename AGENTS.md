@@ -7,7 +7,6 @@
 ```text
 .
 ├── AGENTS.md                         # Repository-wide developer-agent rules
-├── AGENTS.local.md                   # Local paths to reference implementations
 ├── README.md                         # User-facing installation and usage
 ├── package.json                      # Pi package manifest and development commands
 ├── src/
@@ -20,7 +19,8 @@
 │   ├── widget.test.ts                # Width-aware widget behavior
 │   └── visual/                       # Real Pi TUI screenshot fixture and capture tooling
 └── docs/
-    ├── assets/workmap-session.png    # README runtime screenshot
+    ├── adr/                          # Architecture decision records
+    ├── assets/                       # README runtime screenshots (compact / expanded)
     └── *.md                          # Product concepts, boundaries, UI, and references
 ```
 
@@ -29,6 +29,7 @@ Keep session semantics in `src/state.ts`, presentation in `src/widget.ts`, and P
 ## Domain Language
 
 - **Workmap** — The Agent's concise, user-visible declaration of its current operational mental model for one Pi session.
+- **Mental model** — Each party's internal representation of the work. The gap between the user's and the Agent's is the problem; mental models are not directly shareable.
 - **Shared working model** — Provisional common ground created when the user can inspect and correct the Agent's declared workmap.
 - **Signal** — One typed workmap node that materially helps the user understand or correct the Agent's direction.
 - **Goal** — An intended outcome that currently constrains the Agent's direction.
@@ -39,31 +40,13 @@ Keep session semantics in `src/state.ts`, presentation in `src/widget.ts`, and P
 - **Task** — A current action implied by the working model, not the organizing center of the product.
 - **Drift** — A detected mismatch between the Agent's direction and user intent or the declared workmap.
 - **Note** — An optional one- or two-sentence explanation that materially improves alignment.
-- **Session-global** — The latest workmap is shared by every `/tree` branch in one session file.
 
 ## Policies & Mandatory Rules
-
-### Product invariants
-
-- When changing the node model, keep exactly `goal`, `understanding`, `unknown`, `decision`, `option`, `task`, and `drift` unless the user explicitly revises the product model.
-- When representing blocked work, use a Task's free-form `status` and `note`; do not reintroduce a Blocker node.
-- When representing a long-term outcome relevant to this session, use Goal with a `long-term` status; do not add `LongTermGoal` or cross-session memory.
-- When adding relationships, keep `parentId` as the only V1 relationship; do not add refs, DAG rendering, Workstream, or mandatory Goal ownership.
-- When changing Agent guidance, preserve proactive maintenance, current-state pruning, semantic snake_case IDs, and the prohibition on chain-of-thought capture.
-- When changing human interaction, keep the widget display-only and let the user correct it through conversation; do not add approval gates or an editor without an explicit product decision.
-
-### Session and UI invariants
-
-- When restoring state, scan `getEntries()` for the latest valid snapshot so `/tree` does not roll the workmap back.
-- When handling fork, copy the current in-memory workmap into the new session and let parent and fork evolve independently.
-- When changing compact/expanded behavior, read and set Pi's official tool expansion state; do not register a competing hard-coded shortcut.
-- When rendering TUI content, use Pi theme tokens and width-aware utilities, keep status right-aligned only when it fits, and hide the widget when empty.
 
 ### Compatibility and documentation
 
 - When changing runtime code during the `0.x` phase, prefer a direct schema migration over compatibility layers unless released session data would become unreadable.
 - When implementation changes product intent, update the relevant file in `docs/` in the same change; keep README focused on installation and first use.
-- When an implementation constraint forces a temporary deviation from these invariants, record it under `.agents/drift-notes/<topic>.md` and remove the note after resolution.
 
 ## Operation Guide
 

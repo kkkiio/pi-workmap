@@ -52,7 +52,7 @@ Agent 自治越强，human 越容易只在最终结果出现时才重新进入�
 
 ### Drift
 
-`Drift` 不是一般风险，也不是 blocker。它表示 Agent 已检测到当前方向与用户意图或现行 workmap 存在实际偏差。它应高优先级出现，并在重新对齐后删除。
+`Drift` 不是一般风险，也不是 blocker。它表示 Agent 已检测到当前方向与用户意图或现行 workmap 存在实际偏差。它应高优先级出现，并在偏差消解后删除——消解可以是 Agent 被纠正后改向、用户接受 Agent 的方案（此时结论应转为 Decision 或 Understanding），或相关工作完成使偏差失效。
 
 ## 概念关系
 
