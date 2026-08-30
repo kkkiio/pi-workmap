@@ -48,7 +48,7 @@ Workmap 的内容需要持续到达模型。当前实现是 `pi.on("context")` �
 每 turn 开头把 workmap 状态写为持久隐藏 custom message，复刻 oh-my-pi 语义。
 
 - 优点：一次注入整 turn 可见；DeepSeek 链式命中完整；Anthropic/OpenAI 上注入内容算一次后白嫖；pi 原生支持（custom message + `registerMessageRenderer` 可渲染为淡色提示行）。
-- 缺点：transcript 混入系统消息，违背当前"不污染对话记录"的取向；compaction 会把注入内容压掉，需要重建机制；history 导出/分享时需考虑过滤。
+- 缺点：transcript 混入系统消息——对话记录不再纯粹是人与 Agent 的对话，导出、分享、审计时需要过滤；compaction 会把注入内容压掉，需要重建机制。注意：仓库中并未文档化“不污染对话记录”的原则（已有的“不污染”均指 repository 与跨 session 状态，见 ADR 0001 与 product-boundary.md），是否接受系统消息进入对话记录是一个尚未作出的产品决定。
 
 ## 无论选哪个都已确定的原则
 
