@@ -24,6 +24,10 @@ Agent 是否能可靠识别自己与 user intent 的真实偏差，而不是只�
 
 硬阻塞依赖 Agent 主动停下来在对话中提问（见 ADR 0003）。需要观察：Agent 遇到没有用户就无法继续的情况时，是停下问，还是只把 Task 标成 `blocked` 继续干别的；以及 blocked 面包屑是否真的指向对话中等待的那个问题。
 
+### State anchor salience
+
+persisted 注入按内容去重（ADR 0004）：map 长期不变时，唯一的状态消息会停在久远的位置。需要观察模型是否因锚点位置陈旧而降低遵循度——忘记维护 map、引用已被后续工具调用改掉的状态。出现该现象时，应把去重反转为每轮重写。
+
 ### Fork edge cases
 
 交互式 fork 会继承当前内存 snapshot。仍需验证从很早的 tree 节点 fork、从 CLI 直接 fork 与异常退出后的恢复是否都符合“继承当下状态”的用户预期。
