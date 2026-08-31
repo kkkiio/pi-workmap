@@ -67,11 +67,14 @@ npm run build
 
 Skip the check suite for Markdown-only changes unless links, screenshots, or generated artifacts changed.
 
-When changing widget rendering or the README scenario, regenerate the real Pi TUI screenshot. This requires `tmux` and Chrome or Chromium:
+When changing widget rendering or the README scenario, regenerate the real Pi TUI screenshots. The default path captures ANSI from a real Pi process in `tmux` and renders it with Charmbracelet Freeze:
 
 ```bash
+brew install tmux charmbracelet/tap/freeze
 npm run docs:screenshot
 ```
+
+Capture details and pinned visual settings live in `test/visual/README.md` and `test/visual/freeze.json`.
 
 Run the unpublished extension directly in Pi with:
 
