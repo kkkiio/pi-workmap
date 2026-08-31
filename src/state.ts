@@ -25,7 +25,15 @@ export class WorkmapState {
 			if (entry.type !== "custom" || entry.customType !== WORKMAP_ENTRY_TYPE) continue;
 			const data = entry.data as Partial<WorkmapSnapshot> | undefined;
 			if (data?.version !== 1 || !Array.isArray(data.nodes)) continue;
-			const result = this.validate(data.nodes);
+			// Legacy snapshots may carry removed types; map them so released session
+			// data stays resumable: unknown → understanding, goal/direction → heading.
+			const migrated = (data.nodes as Array<Partial<WorkmapNode>>).map((node) => {
+				if (node?.type === ("unknown" as WorkmapNode["type"])) return { ...node, type: "understanding" as const };
+				if (node?.type === ("goal" as WorkmapNode["type"]) || node?.type === ("direction" as WorkmapNode["type"]))
+					return { ...node, type: "heading" as const };
+				return node;
+			});
+			const result = this.validate(migrated as unknown[]);
 			if (typeof result === "string") continue;
 			this.nodes = result;
 			return;

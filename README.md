@@ -18,7 +18,7 @@ Agent 会在 working model 发生实质变化时主动调用 `workmap` tool；�
 
 ![pi-workmap compact runtime widget](docs/assets/workmap-session-compact.png)
 
-按 Pi 官方的 `Ctrl+O`（`app.tools.expand`）同时切换 tool output 与 workmap 的 compact / expanded 状态。compact 优先呈现 Goal、Drift、Unknown、Decision 和 Task；expanded 显示完整树、Option 与 note。
+按 Pi 官方的 `Ctrl+O`（`app.tools.expand`）同时切换 tool output 与 workmap 的 compact / expanded 状态。compact 以 cluster 为单位采样高价值信号（Heading、Drift、Decision 优先，Option 缩进跟随其 Decision）；expanded 显示完整树与 note。
 
 ## Session behavior
 

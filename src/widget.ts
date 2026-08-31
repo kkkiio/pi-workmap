@@ -3,6 +3,9 @@ import { type TUI, truncateToWidth, visibleWidth, wrapTextWithAnsi } from "@eare
 import type { WorkmapNode, WorkmapNodeType } from "./types.js";
 
 const COMPACT_NODE_LIMIT = 5;
+// A cluster (root plus descendants) gets at most this many compact rows so one
+// fat tree cannot crowd every other signal off the widget.
+const COMPACT_CLUSTER_LIMIT = 3;
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;
 // Every glyph occupies a two-column cell so double-width glyphs (⚡) keep titles left-aligned.
@@ -11,22 +14,22 @@ export const PRESENTATION: Record<
 	WorkmapNodeType,
 	{ glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }
 > = {
-	goal: { glyph: "◎", glyphColor: "accent" },
+	heading: { glyph: "◎", glyphColor: "accent" },
 	understanding: { glyph: "•", glyphColor: "text" },
-	unknown: { glyph: "?", glyphColor: "warning" },
 	decision: { glyph: "◆", glyphColor: "accent" },
 	option: { glyph: "◇", glyphColor: "text" },
 	task: { glyph: "□", glyphColor: "text" },
 	drift: { glyph: "⚡", glyphColor: "error" },
 };
 const COMPACT_PRIORITY: Record<WorkmapNodeType, number> = {
-	goal: 0,
+	heading: 0,
 	drift: 1,
-	unknown: 2,
-	decision: 3,
+	decision: 2,
+	// Options rank right after their decision: inside a decision cluster they are
+	// the defining children and must outrank any tasks or understandings below it.
+	option: 3,
 	task: 4,
 	understanding: 5,
-	option: 6,
 };
 
 export function glyphCell(type: WorkmapNodeType): string {
@@ -93,15 +96,65 @@ export class WorkmapWidget {
 			const lines = [this.align(theme.fg("accent", theme.bold(summary)), theme.fg("dim", hint), width)];
 
 			if (!expanded) {
-				const ranked = nodes
-					.map((node, index) => ({ node, index }))
-					.sort(
-						(left, right) =>
-							COMPACT_PRIORITY[left.node.type] - COMPACT_PRIORITY[right.node.type] || left.index - right.index,
-					);
-				const visible = ranked.slice(0, COMPACT_NODE_LIMIT).map(({ node }) => node);
-				for (const node of visible) lines.push(this.renderNode(node, "", width, theme));
-				const hidden = ranked.slice(COMPACT_NODE_LIMIT).map(({ node }) => node);
+				// Compact samples clusters, not lone nodes: a child stripped of its parent
+				// loses meaning (an option says nothing without its decision). Each cluster
+				// ranks by its most alignment-critical member and renders as an indented
+				// tree, capped per cluster to keep the lineup diverse.
+				const indexOf = new Map(nodes.map((node, index) => [node.id, index] as const));
+				const compare = (left: WorkmapNode, right: WorkmapNode): number =>
+					COMPACT_PRIORITY[left.type] - COMPACT_PRIORITY[right.type] ||
+					(indexOf.get(left.id) ?? 0) - (indexOf.get(right.id) ?? 0);
+				const children = new Map<string, WorkmapNode[]>();
+				for (const node of nodes) {
+					if (!node.parentId) continue;
+					const siblings = children.get(node.parentId) ?? [];
+					siblings.push(node);
+					children.set(node.parentId, siblings);
+				}
+				for (const siblings of children.values())
+					siblings.sort((left, right) => subtreeRank(left) - subtreeRank(right) || compare(left, right));
+				// Best rank over a node's whole subtree. Sibling branches compete by it, so
+				// the branch carrying the member that promoted the cluster renders first
+				// instead of being cut by the cluster row budget.
+				function subtreeRank(node: WorkmapNode): number {
+					let best = COMPACT_PRIORITY[node.type];
+					const stack = [...(children.get(node.id) ?? [])];
+					while (stack.length > 0) {
+						const next = stack.pop() as WorkmapNode;
+						best = Math.min(best, COMPACT_PRIORITY[next.type]);
+						stack.push(...(children.get(next.id) ?? []));
+					}
+					return best;
+				}
+				const roots = nodes
+					.filter((node) => !node.parentId)
+					.map((root) => ({ root, rank: subtreeRank(root) }))
+					.sort((left, right) => left.rank - right.rank || compare(left.root, right.root));
+				const shown = new Set<string>();
+				let budget = COMPACT_NODE_LIMIT;
+				const visit = (
+					node: WorkmapNode,
+					prefix: string,
+					connector: string,
+					childPrefix: string,
+					clusterBudget: { rows: number },
+				): void => {
+					if (budget <= 0 || clusterBudget.rows <= 0) return;
+					lines.push(this.renderNode(node, `${prefix}${connector}`, width, theme));
+					shown.add(node.id);
+					budget -= 1;
+					clusterBudget.rows -= 1;
+					const descendants = children.get(node.id) ?? [];
+					for (const [index, child] of descendants.entries()) {
+						const last = index === descendants.length - 1;
+						visit(child, `${prefix}${childPrefix}`, last ? "└─ " : "├─ ", last ? "   " : "│  ", clusterBudget);
+					}
+				};
+				for (const { root } of roots) {
+					if (budget <= 0) break;
+					visit(root, "", "", "", { rows: COMPACT_CLUSTER_LIMIT });
+				}
+				const hidden = nodes.filter((node) => !shown.has(node.id));
 				if (hidden.length > 0) lines.push(theme.fg("dim", `  ${this.summarizeHidden(hidden)}`));
 				return lines.map((line) => truncateToWidth(line, width));
 			}
@@ -113,7 +166,12 @@ export class WorkmapWidget {
 				siblings.push(node);
 				children.set(node.parentId, siblings);
 			}
-			const roots = nodes.filter((node) => !node.parentId);
+			// Heading roots lead the expanded tree, following the tech-doc
+			// convention that the goals section precedes the details.
+			const roots = [
+				...nodes.filter((node) => !node.parentId && node.type === "heading"),
+				...nodes.filter((node) => !node.parentId && node.type !== "heading"),
+			];
 			const visit = (node: WorkmapNode, prefix: string, connector: string, childPrefix: string): void => {
 				lines.push(this.renderNode(node, `${prefix}${connector}`, width, theme));
 				if (node.note) {

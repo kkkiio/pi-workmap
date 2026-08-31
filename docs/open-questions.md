@@ -10,7 +10,7 @@
 
 ### Compact line budget
 
-当前最多展示五个 node，并按 alignment value 排序。需要验证不同终端高度下，四行、五行或动态预算哪个更合适，以及多个 Goal 是否会挤掉关键 Unknown。
+当前 compact 以 cluster 为单位采样，最多五行、每簇最多三行。需要验证不同终端高度下，行预算与簇预算哪个更合适，以及多个平级 Heading 是否会挤掉关键信号。
 
 ### Free-form status vocabulary
 

@@ -8,7 +8,7 @@
 
 - 链接：[Claude 官方文章](https://claude.com/blog/a-field-guide-to-claude-fable-finding-your-unknowns)
 - 可借鉴点：把 prompt、skills 与 context 比作 map，把 codebase、现实约束与实际行为比作 territory；两者的缺口会产生 unknowns，而且 unknowns 会在实现过程中继续出现。文章还建议记录 implementation deviations 与 decisions。
-- 与 `pi-workmap` 的差异：文章提供协作方法与临时 notes 习惯；`pi-workmap` 试图把持续出现的 Goal、Understanding、Unknown、Decision 与 Task 做成 live shared state。
+- 与 `pi-workmap` 的差异：文章提供协作方法与临时 notes 习惯；`pi-workmap` 试图把持续出现的 Heading、Understanding、Decision 与 Task 做成 live shared state。
 
 ## Pi task、plan 与 execution visibility
 
@@ -110,7 +110,7 @@
 
 - 链接：[Chen et al., “Situation awareness-based agent transparency and human-autonomy teaming effectiveness”](https://doi.org/10.1080/1463922X.2017.1315750)
 - 可借鉴点：把 transparency 分为 Agent 当前 actions/plans、reasoning/rationale，以及 projected outcomes/uncertainty，并强调双向沟通与 calibrated trust。
-- 对产品的启发：Goal/Task、Understanding/Decision rationale、Unknown/Projection 可分别覆盖这些信息层；但 UI 必须控制信息量，避免 transparency 变成噪声。
+- 对产品的启发：Heading/Task、Understanding/Decision rationale、hypothesis/Projection 可分别覆盖这些信息层；但 UI 必须控制信息量，避免 transparency 变成噪声。
 
 ### Common ground / grounding
 

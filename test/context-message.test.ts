@@ -3,8 +3,8 @@ import { renderStateMessage } from "../src/context-message.js";
 import type { WorkmapNode } from "../src/types.js";
 
 const nodes: WorkmapNode[] = [
-	{ id: "reliable_auth", type: "goal", title: "Keep users signed in reliably", status: "current" },
-	{ id: "refresh_race", type: "unknown", title: "Can the refresh race cross workers?", status: "investigating" },
+	{ id: "reliable_auth", type: "heading", title: "Keep users signed in reliably", status: "current" },
+	{ id: "refresh_race", type: "task", title: "Check whether the refresh race can cross workers", status: "active" },
 	{ id: "serialization", type: "decision", title: "Refresh serialization ownership", status: "considering" },
 	{ id: "client_serialization", type: "option", title: "Serialize in the client", parentId: "serialization" },
 	{
@@ -22,17 +22,21 @@ describe("renderStateMessage", () => {
 	const output = renderStateMessage(nodes);
 
 	it("renders a scannable tree-ordered listing with inline ids and statuses", () => {
-		expect(output).toContain("goal reliable_auth [current]: Keep users signed in reliably");
+		expect(output).toContain("heading reliable_auth [current]: Keep users signed in reliably");
 		expect(output).toContain("decision serialization [considering]: Refresh serialization ownership");
 		expect(output).toContain("  option client_serialization: Serialize in the client");
 		expect(output).toContain("  option server_idempotency [preferred]: Make refresh idempotent on the server");
 	});
 
-	it("indents children under their parent and collapses note whitespace", () => {
+	it("indents children under their parent", () => {
 		const decision = output.indexOf("decision serialization");
 		const option = output.indexOf("  option client_serialization");
 		expect(option).toBeGreaterThan(decision);
-		expect(output).toContain("  note: More robust across workers, but a larger change.");
+	});
+
+	it("keeps notes out of the injected snapshot", () => {
+		expect(output).not.toContain("note:");
+		expect(output).not.toContain("More robust across workers");
 	});
 
 	it("treats nodes with missing parents as roots", () => {

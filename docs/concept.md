@@ -28,7 +28,7 @@ Human inspects and corrects through conversation
 
 ### Situation awareness
 
-Human 需要知道当前有哪些重要事实，它们意味着什么，以及工作可能走向哪里。只展示 Agent 正在调用哪个 tool，只覆盖 activity visibility；Goal、Understanding、Unknown、Decision 与 Task 才共同构成可用的 situation awareness。
+Human 需要知道当前有哪些重要事实，它们意味着什么，以及工作可能走向哪里。只展示 Agent 正在调用哪个 tool，只覆盖 activity visibility；Heading、Understanding、Decision 与 Task 才共同构成可用的 situation awareness。
 
 ### Agent transparency
 
@@ -40,11 +40,11 @@ Human 需要知道当前有哪些重要事实，它们意味着什么，以及�
 
 ### Silent assumption
 
-Agent 把未经确认的前提当作事实，会让双方看似沿同一路线、实际依赖不同模型。此类前提应成为 `Understanding`，必要时标记为 `hypothesis`；若仍是待调查的事实问题，则写成 `Unknown`。
+Agent 把未经确认的前提当作事实，会让双方看似沿同一路线、实际依赖不同模型。此类前提应成为 `Understanding`，必要时标记为 `hypothesis`；待调查的事实问题应直接调查，或在只有用户能答时在对话中提出，不设专门节点类型。
 
 ### Premature commitment
 
-在关键 unknown 尚未澄清时过早选定方案，会压缩探索空间。显式的 Unknown、Decision 和 considered Options 让 human 能在实现成本扩大前看见这种收敛。
+在关键事实尚未澄清时过早选定方案，会压缩探索空间。显式的 hypothesis、Decision 和 considered Options 让 human 能在实现成本扩大前看见这种收敛。
 
 ### Out-of-the-loop
 

@@ -6,7 +6,7 @@
 Current session                              Project lifetime
 ─────────────────────────────────────────    ─────────────────────────
 shared working model                         durable knowledge
-Goal / Understanding / Unknown / Decision   code / ADR / design docs
+Heading / Understanding / Decision       code / ADR / design docs
 Option / Task / Drift
 fast-changing, incomplete, correctable       reviewed, intentional, stable
 may disappear with the session               source of truth
@@ -45,7 +45,7 @@ Workmap 不应默认：
 - 把每个 Understanding 写入项目文档；
 - 把每个 Decision 自动升级为 ADR；
 - 跨 session 合并成“Agent memory”；
-- 将临时 Unknown 或失败尝试长期保存；
+- 将临时假设或失败尝试长期保存；
 - 用插件强制 Agent 持续维护所有项目知识。
 
 需要沉淀时，human 可以明确要求 Agent 根据 workmap 生成或更新 durable artifact。这个动作应是有意图的编辑，而不是后台同步。
@@ -65,7 +65,7 @@ Workmap 不应默认：
 
 | 相邻类别 | 主要问题 | 与 pi-workmap 的区别 |
 |---|---|---|
-| Todo / task manager | 还要执行哪些步骤 | Workmap 还展示认识、未知与决策 |
+| Todo / task manager | 还要执行哪些步骤 | Workmap 还展示认识、假设与决策；Task 可分组嵌套，但刻意不提供依赖、进度汇总与完成归档等执行追踪语义 |
 | Plan review / approval gate | 是否批准一个计划 | Workmap 默认持续同步，不在每次变化时阻塞 |
 | Scratchpad / working memory | Agent 如何保存临时材料 | Workmap 是双方可扫读的结构化 shared state |
 | Session outline / trace | Agent 实际执行了什么 | Workmap 展示意图、理解和选择，不复刻 tool trace |

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WORKMAP_ENTRY_TYPE, WorkmapState } from "../src/state.js";
 import type { WorkmapNode, WorkmapSnapshot } from "../src/types.js";
 
-const goal: WorkmapNode = { id: "fix_auth", type: "goal", title: "Stop random logouts", status: "current" };
+const goal: WorkmapNode = { id: "fix_auth", type: "heading", title: "Stop random logouts", status: "current" };
 
 function sessionWith(entries: SessionEntry[]): ExtensionContext["sessionManager"] {
 	return {
@@ -18,7 +18,12 @@ describe("WorkmapState", () => {
 			state.update(
 				[
 					goal,
-					{ id: "refresh_race", type: "unknown", title: "Can refresh race across workers?", parentId: "fix_auth" },
+					{
+						id: "refresh_race",
+						type: "task",
+						title: "Check whether refresh can race across workers",
+						parentId: "fix_auth",
+					},
 				],
 				[],
 			),
@@ -33,7 +38,7 @@ describe("WorkmapState", () => {
 		const state = new WorkmapState();
 		state.update([goal], []);
 
-		expect(state.update([{ id: "Fix Auth", type: "goal", title: "Bad id" }], []).error).toContain(
+		expect(state.update([{ id: "Fix Auth", type: "heading", title: "Bad id" }], []).error).toContain(
 			"Invalid semantic id",
 		);
 		expect(state.update([{ id: "orphan", type: "task", title: "Orphan", parentId: "missing" }], []).error).toContain(
@@ -73,5 +78,32 @@ describe("WorkmapState", () => {
 		state.restore(sessionWith(entries));
 
 		expect(state.list()).toEqual(latestSnapshot.nodes);
+	});
+
+	it("migrates legacy unknown, goal, and direction nodes on restore", () => {
+		const legacySnapshot = {
+			version: 1,
+			nodes: [
+				{ ...goal, type: "goal" },
+				{ id: "phase_two", type: "direction", title: "Land the confirmed changes" },
+				{ id: "refresh_race", type: "unknown", title: "Can refresh race across workers?", parentId: "fix_auth" },
+			],
+		};
+		const entries = [
+			{
+				type: "custom",
+				id: "entry-0",
+				parentId: null,
+				timestamp: new Date(0).toISOString(),
+				customType: WORKMAP_ENTRY_TYPE,
+				data: legacySnapshot,
+			} as SessionEntry,
+		];
+		const state = new WorkmapState();
+
+		state.restore(sessionWith(entries));
+
+		expect(state.list().map((node) => node.type)).toEqual(["heading", "heading", "understanding"]);
+		expect(state.list()[2]?.parentId).toBe("fix_auth");
 	});
 });

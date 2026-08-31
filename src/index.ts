@@ -85,7 +85,9 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		}
 		const nodes = state.list();
 		if (nodes.length === 0) return {};
-		const fingerprint = JSON.stringify(nodes);
+		// Fingerprint the rendered snapshot, not the raw nodes: note-only edits change
+		// nothing in the note-free message and must not trigger a duplicate injection.
+		const fingerprint = renderStateMessage(nodes);
 		if (fingerprint === lastInjectedState) return {};
 		lastInjectedState = fingerprint;
 		return {
@@ -105,11 +107,13 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		promptSnippet:
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
-			"Proactively update workmap after material changes to your goal, understanding, unknowns, decisions, tasks, or detected alignment drift; do not wait for the user to ask.",
+			"Proactively update workmap after material changes to your heading, understanding, decisions, tasks, or detected alignment drift; do not wait for the user to ask.",
 			"Treat workmap as current shared situation awareness, not a history, todo log, project memory, or chain-of-thought. Remove nodes that no longer affect the current direction.",
-			"Use goal for intended outcomes (status may be current or long-term), understanding for current facts/models/hypotheses, unknown for factual questions, decision for deliberation or commitments, option only for considered decision alternatives, task for current action, and drift only for a detected mismatch with user intent or the declared map. Keep a drift while the user has not responded; remove it once the mismatch resolves through correction or completion of the affected work, and when the user accepts the current direction, record any lasting conclusion as a decision or understanding before removing the drift.",
+			"Use heading to report your current course: your best present reading of what the user wants. Reporting a heading is telemetry, not testimony — a corrected heading is a success event, not an error, so declare it early even at low confidence. Re-examine it at every phase shift and after every user correction: update it when your understanding changed, even if the user's words did not. Heading names the destination, never the route; routes are decisions. Status may be current or long-term.",
+			"Use understanding for current facts/models/hypotheses (mark any unverified premise explicitly as hypothesis rather than stating it as fact), decision for deliberation or commitments (title it as a question while deliberating, and once decided append the conclusion to the title, e.g. 'Where should X live? → on the server', keeping the question for context), option only for considered decision alternatives, task for current action (tasks may nest to express grouping, but keep nesting shallow and never model execution tracking such as dependencies or progress rollups), and drift only for a detected mismatch with user intent or the declared map. Keep a drift while the user has not responded; remove it once the mismatch resolves through correction or completion of the affected work, and when the user accepts the current direction, record any lasting conclusion as a decision or understanding before removing the drift.",
+			"Investigate factual questions directly instead of recording them on the map. When only the user can answer, ask in conversation; when a pending answer blocks a decision, keep that decision at status considering with the open question in its note.",
 			"Use stable semantic snake_case ids, concise titles, optional short free-form status labels, and note only when one or two sentences materially improve alignment. Nest freely only when the information reads more clearly as a tree.",
-			"Prefer restrained conventional status labels such as current, long-term, open, investigating, considering, chosen, active, blocked, or done. Record blocked work as a task status with the reason in note or as its own unknown or decision node, and when work cannot proceed without the user, stop and ask in conversation instead of only marking the map.",
+			"Prefer restrained conventional status labels such as current, long-term, open, investigating, considering, chosen, active, blocked, or done. Record blocked work as a task status with the reason in note or as its own decision node, and when work cannot proceed without the user, stop and ask in conversation instead of only marking the map.",
 		],
 		parameters: WorkmapParams,
 		executionMode: "sequential",
