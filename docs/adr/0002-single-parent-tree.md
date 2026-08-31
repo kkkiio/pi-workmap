@@ -1,6 +1,6 @@
 # ADR 0002: V1 只有 `parentId` 一种关系，不做 refs 或 DAG
 
-- Status: Accepted
+- Status: Accepted（表达形式由 [ADR 0011](0011-nested-children-root-ids.md) 修订：parentId 引用改为嵌套 children，single-parent 由构造保证）
 - Date: 2026-08-30
 
 ## Context
