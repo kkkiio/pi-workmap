@@ -31,7 +31,7 @@ UI 以 tree 为主，每个节点最多一个可选 `parentId`。V1 不提供 re
 ```text
 Node
 ├─ id          semantic snake_case, stable, session-unique
-├─ type        goal | understanding | decision | option | task | drift
+├─ type        heading | understanding | decision | option | task | drift
 ├─ title       one scannable sentence
 ├─ status?     short free-form label
 ├─ note?       optional one- or two-sentence explanation

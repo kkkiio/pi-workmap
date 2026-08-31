@@ -111,20 +111,24 @@ export class WorkmapWidget {
 					siblings.push(node);
 					children.set(node.parentId, siblings);
 				}
-				for (const siblings of children.values()) siblings.sort(compare);
-				const clusterRank = (root: WorkmapNode): number => {
-					let best = COMPACT_PRIORITY[root.type];
-					const stack = [...(children.get(root.id) ?? [])];
+				for (const siblings of children.values())
+					siblings.sort((left, right) => subtreeRank(left) - subtreeRank(right) || compare(left, right));
+				// Best rank over a node's whole subtree. Sibling branches compete by it, so
+				// the branch carrying the member that promoted the cluster renders first
+				// instead of being cut by the cluster row budget.
+				function subtreeRank(node: WorkmapNode): number {
+					let best = COMPACT_PRIORITY[node.type];
+					const stack = [...(children.get(node.id) ?? [])];
 					while (stack.length > 0) {
-						const node = stack.pop() as WorkmapNode;
-						best = Math.min(best, COMPACT_PRIORITY[node.type]);
-						stack.push(...(children.get(node.id) ?? []));
+						const next = stack.pop() as WorkmapNode;
+						best = Math.min(best, COMPACT_PRIORITY[next.type]);
+						stack.push(...(children.get(next.id) ?? []));
 					}
 					return best;
-				};
+				}
 				const roots = nodes
 					.filter((node) => !node.parentId)
-					.map((root) => ({ root, rank: clusterRank(root) }))
+					.map((root) => ({ root, rank: subtreeRank(root) }))
 					.sort((left, right) => left.rank - right.rank || compare(left.root, right.root));
 				const shown = new Set<string>();
 				let budget = COMPACT_NODE_LIMIT;

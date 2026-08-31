@@ -115,6 +115,31 @@ describe("WorkmapWidget", () => {
 		nodes.splice(0, nodes.length, ...original);
 	});
 
+	it("renders the nested signal that promoted its cluster", () => {
+		const original = nodes.map((node) => ({ ...node }));
+		nodes.splice(
+			0,
+			nodes.length,
+			{ id: "probe", type: "task", title: "Probe the refresh path", status: "active" },
+			{ id: "choose", type: "decision", title: "Pick an approach", status: "considering", parentId: "probe" },
+			{ id: "opt_a", type: "option", title: "Approach A", parentId: "choose" },
+			{ id: "context", type: "understanding", title: "Requests overlap", parentId: "probe" },
+			{
+				id: "off_course",
+				type: "drift",
+				title: "Fix assumed a single worker",
+				status: "detected",
+				parentId: "context",
+			},
+		);
+		const { lines } = renderWidget(false);
+		const output = lines.join("\n");
+
+		expect(output).toContain("Fix assumed a single worker");
+		expect(lines.at(-1)).toBe("  … 2 more · 1 decision · 1 option");
+		nodes.splice(0, nodes.length, ...original);
+	});
+
 	it("drops statuses and the hint before squeezing titles on narrow widths", () => {
 		const { lines } = renderWidget(false, 24);
 		const output = lines.join("\n");

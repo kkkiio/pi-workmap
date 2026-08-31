@@ -85,7 +85,9 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		}
 		const nodes = state.list();
 		if (nodes.length === 0) return {};
-		const fingerprint = JSON.stringify(nodes);
+		// Fingerprint the rendered snapshot, not the raw nodes: note-only edits change
+		// nothing in the note-free message and must not trigger a duplicate injection.
+		const fingerprint = renderStateMessage(nodes);
 		if (fingerprint === lastInjectedState) return {};
 		lastInjectedState = fingerprint;
 		return {
