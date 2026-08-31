@@ -44,10 +44,12 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	const state = new WorkmapState();
 	const widget = new WorkmapWidget(() => state.list());
 	let activeSessionId: string | undefined;
-	let lastInjectedState: string | undefined;
+	// Agent turns (turn_end events) since the last workmap call, accumulated across runs;
+	// rendered into the injected snapshot so the model can see the anchor going stale.
+	let turnsSinceUpdate = 0;
 
 	pi.on("session_start", async (event, ctx) => {
-		lastInjectedState = undefined;
+		turnsSinceUpdate = 0;
 		const nextSessionId = ctx.sessionManager.getSessionId();
 		if (event.reason === "new") {
 			state.clear();
@@ -62,7 +64,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_tree", async (_event, ctx) => {
-		lastInjectedState = undefined;
+		turnsSinceUpdate = 0;
 		state.restore(ctx.sessionManager);
 		widget.update();
 	});
@@ -71,9 +73,8 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		widget.dispose();
 	});
 
-	pi.on("session_before_compact", async () => {
-		// Compaction may drop the injected message from context; allow re-injection on the next run.
-		lastInjectedState = undefined;
+	pi.on("turn_end", async () => {
+		turnsSinceUpdate += 1;
 	});
 
 	pi.on("before_agent_start", async (_event, ctx) => {
@@ -81,19 +82,17 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			state.restore(ctx.sessionManager);
 			activeSessionId = ctx.sessionManager.getSessionId();
 			widget.attach(ctx.ui);
-			lastInjectedState = undefined;
+			turnsSinceUpdate = 0;
 		}
 		const nodes = state.list();
 		if (nodes.length === 0) return {};
-		// Fingerprint the rendered snapshot, not the raw nodes: note-only edits change
-		// nothing in the note-free message and must not trigger a duplicate injection.
-		const fingerprint = renderStateMessage(nodes);
-		if (fingerprint === lastInjectedState) return {};
-		lastInjectedState = fingerprint;
+		// Re-inject on every run (ADR 0010): the snapshot carries the staleness counter, so
+		// no two injections are identical, and the recurring tail position keeps the anchor
+		// salient instead of letting it drift behind the growing transcript.
 		return {
 			message: {
 				customType: "pi-workmap-context",
-				content: renderStateMessage(nodes),
+				content: renderStateMessage(nodes, { turnsSinceUpdate }),
 				display: false,
 			},
 		};
@@ -118,6 +117,8 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		parameters: WorkmapParams,
 		executionMode: "sequential",
 		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+			// Any call — including a no-change re-assertion — re-anchors the map.
+			turnsSinceUpdate = 0;
 			let changed = false;
 			let error: string | undefined;
 			if (params.action === "clear") {

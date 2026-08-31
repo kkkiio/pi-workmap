@@ -1,6 +1,6 @@
 # ADR 0004: workmap 状态注入的通道与频率（待定）
 
-- Status: Accepted
+- Status: Accepted（"去重的取舍"一节由 [ADR 0010](0010-staleness-counter-reinjection.md) 修订为每 run 重注）
 - Date: 2026-08-30
 
 ## Context

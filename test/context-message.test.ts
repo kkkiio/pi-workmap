@@ -49,4 +49,14 @@ describe("renderStateMessage", () => {
 		expect(output.startsWith("<workmap-state>")).toBe(true);
 		expect(output.trimEnd().endsWith("</workmap-state>")).toBe(true);
 	});
+
+	it("omits the staleness line when no meta is given", () => {
+		expect(output).not.toContain("Last workmap update");
+	});
+
+	it("renders the staleness counter in agent turns", () => {
+		expect(renderStateMessage(nodes, { turnsSinceUpdate: 7 })).toContain("Last workmap update: 7 turns ago.");
+		expect(renderStateMessage(nodes, { turnsSinceUpdate: 1 })).toContain("Last workmap update: 1 turn ago.");
+		expect(renderStateMessage(nodes, { turnsSinceUpdate: 0 })).toContain("Last workmap update: 0 turns ago.");
+	});
 });
