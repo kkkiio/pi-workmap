@@ -5,10 +5,10 @@ import type { WorkmapNode, WorkmapSnapshot } from "../src/types.js";
 
 const goal: WorkmapNode = { id: "fix_auth", type: "goal", title: "Stop random logouts", status: "current" };
 
-function contextWith(entries: SessionEntry[]): ExtensionContext {
+function sessionWith(entries: SessionEntry[]): ExtensionContext["sessionManager"] {
 	return {
-		sessionManager: { getEntries: vi.fn(() => entries) },
-	} as unknown as ExtensionContext;
+		getEntries: vi.fn(() => entries),
+	} as unknown as ExtensionContext["sessionManager"];
 }
 
 describe("WorkmapState", () => {
@@ -70,7 +70,7 @@ describe("WorkmapState", () => {
 		);
 		const state = new WorkmapState();
 
-		state.restore(contextWith(entries));
+		state.restore(sessionWith(entries));
 
 		expect(state.list()).toEqual(latestSnapshot.nodes);
 	});

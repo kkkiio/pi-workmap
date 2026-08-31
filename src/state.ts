@@ -18,8 +18,8 @@ export class WorkmapState {
 		return true;
 	}
 
-	restore(ctx: ExtensionContext): void {
-		const entries = ctx.sessionManager.getEntries();
+	restore(sessionManager: Pick<ExtensionContext["sessionManager"], "getEntries">): void {
+		const entries = sessionManager.getEntries();
 		for (let index = entries.length - 1; index >= 0; index -= 1) {
 			const entry = entries[index];
 			if (entry.type !== "custom" || entry.customType !== WORKMAP_ENTRY_TYPE) continue;
