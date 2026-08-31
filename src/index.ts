@@ -64,7 +64,8 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.on("session_tree", async (_event, ctx) => {
-		turnsSinceUpdate = 0;
+		// Branch navigation is not a new session and the map is session-global: keep the
+		// staleness counter running so a stale map cannot masquerade as fresh.
 		state.restore(ctx.sessionManager);
 		widget.update();
 	});

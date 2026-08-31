@@ -107,5 +107,22 @@ describe("workmap extension lifecycle", () => {
 			const reasserted = await beforeAgentStart(handlers, context);
 			expect(reasserted?.message?.content).toContain("Last workmap update: 0 turns ago.");
 		});
+
+		it("keeps the counter running across tree navigation", async () => {
+			const { handlers, context, getTool } = setup();
+			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
+			await getTool().execute(
+				"call",
+				{ action: "update", nodes: [{ id: "heading", type: "heading", title: "Survive branch switches" }] },
+				undefined,
+				undefined,
+				undefined,
+			);
+			await handlers.get("turn_end")?.({} as never, context);
+			await handlers.get("turn_end")?.({} as never, context);
+			await handlers.get("session_tree")?.({ type: "session_tree" } as never, context);
+			const result = await beforeAgentStart(handlers, context);
+			expect(result?.message?.content).toContain("Last workmap update: 2 turns ago.");
+		});
 	});
 });
