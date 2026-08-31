@@ -64,6 +64,6 @@ Agent 通过一个 `workmap` tool 维护状态：
 - `resume` 恢复整场协作的最新 map；
 - interactive fork 把当前内存 snapshot 写入新 session，之后独立演化；
 - `new session` 从空 map 开始；
-- snapshot 不自动进入 Agent context；extension 会为模型调用注入一份短暂、隐藏的 current-state reminder（只含结构与标题，note 是面向用户的对齐依据，不进入注入快照）。0.x 早期快照中的 `unknown` 节点在恢复时迁移为 `understanding`，`goal`/`direction` 节点迁移为 `heading`。
+- snapshot 不自动进入 Agent context；extension 会在每个 agent run 前为模型重新注入一份隐藏的 current-state 快照（只含结构与标题，note 是面向用户的对齐依据，不进入注入快照；快照尾部附 staleness 计数，见 [ADR 0010](adr/0010-staleness-counter-reinjection.md)）。0.x 早期快照中的 `unknown` 节点在恢复时迁移为 `understanding`，`goal`/`direction` 节点迁移为 `heading`。
 
 这与普通 branch-local todo 的因果回放不同：workmap 是整场协作当前共同看到的白板，而不是某个历史分支当时拥有的任务列表。

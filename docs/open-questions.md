@@ -24,9 +24,9 @@ Agent 是否能可靠识别自己与 user intent 的真实偏差，而不是只�
 
 硬阻塞依赖 Agent 主动停下来在对话中提问（见 ADR 0003）。需要观察：Agent 遇到没有用户就无法继续的情况时，是停下问，还是只把 Task 标成 `blocked` 继续干别的；以及 blocked 面包屑是否真的指向对话中等待的那个问题。
 
-### State anchor salience
+### ~~State anchor salience~~（已验证，见 ADR 0010）
 
-persisted 注入按内容去重（ADR 0004）：map 长期不变时，唯一的状态消息会停在久远的位置。需要观察模型是否因锚点位置陈旧而降低遵循度——忘记维护 map、引用已被后续工具调用改掉的状态。出现该现象时，应把去重反转为每轮重写。
+已观察到预期现象：一次调试会话中 Agent 首个 run 写入 workmap 后跨 3 个 user prompt、~70 次工具调用未更新，唯一的状态消息漂到上下文深处，用户被迫追问"你在干什么"。已按预案反转为每 run 重写并附加 staleness 计数（[ADR 0010](adr/0010-staleness-counter-reinjection.md)）。后续观察项转移为：模型是否对每 run 重复出现的快照产生习惯化（计数增长仍不触发更新）。
 
 ### Fork edge cases
 
