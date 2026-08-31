@@ -57,15 +57,15 @@ describe("workmap extension lifecycle", () => {
 					ctx: undefined,
 				) => Promise<unknown>;
 			};
+			const sessionManager = SessionManager.inMemory();
 			const pi = {
 				on: vi.fn((event: string, handler: Handler) => handlers.set(event, handler)),
-				appendEntry: vi.fn(),
+				appendEntry: vi.fn((customType: string, data: unknown) => sessionManager.appendCustomEntry(customType, data)),
 				registerTool: vi.fn((definition: unknown) => {
 					tool = definition as typeof tool;
 				}),
 			} as unknown as ExtensionAPI;
 			workmapExtension(pi);
-			const sessionManager = SessionManager.inMemory();
 			const context = {
 				sessionManager,
 				ui: { setWidget: vi.fn() },
