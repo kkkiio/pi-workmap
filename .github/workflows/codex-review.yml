@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Check Codex review state
-        uses: kkkiio/codex-review-check@2fb7c1f8aa1e5d5c5995c561f39402ae6ba00022
+        uses: kkkiio/codex-review-check@4af8b5fa9b1463b318bd9e4cf0b86a257296d729
         with:
           github-token: ${{ github.token }}
           pull-request: ${{ inputs['pull-request'] || github.event.pull_request.number || github.event.issue.number }}
