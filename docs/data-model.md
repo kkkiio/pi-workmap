@@ -4,7 +4,7 @@
 
 V1 是一个 Agent-maintained、session-global 的 typed tree。节点表达当前仍影响 Agent 方向的信息，而不是保存完整历史。一个 session 可以有多个平级 Heading；Heading 不是其他元素的强制容器，也不增加 Workstream。
 
-UI 以 tree 为主，每个节点最多一个可选 `parentId`。V1 不提供 refs、cross-reference 或 DAG renderer；`parentId` 只服务信息表达与阅读顺序，不承担工作组织语义。
+UI 以 tree 为主：root 通过嵌套 `children` 表达层级，single-parent 由构造保证。V1 不提供 refs、cross-reference 或 DAG renderer；层级只服务信息表达与阅读顺序，不承担工作组织语义。
 
 ## Node types
 

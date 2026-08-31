@@ -95,4 +95,4 @@ Drift 出现意味着 Agent 已识别真实不一致；它不是泛化的风险�
 - 所有 glyph 统一按两个终端列宽的单元格渲染，双宽的 ⚡ 与其他 glyph 的 title 保持同列左对齐。
 - `status` 只在 title 至少保留 20 列时右对齐；窄终端先隐藏 status 与快捷键 hint，优先保留 title。
 - node title 保持单行可扫读，note 只解释必要证据、条件或 trade-off。
-- V1 只有 `parentId` tree；不显示 refs 或 DAG edges。
+- V1 只有嵌套 `children` 构成的 single-parent tree；不显示 refs 或 DAG edges。
