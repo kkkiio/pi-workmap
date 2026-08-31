@@ -1,4 +1,4 @@
-import type { WorkmapNode } from "./types.js";
+import type { WorkmapChild, WorkmapRoot } from "./types.js";
 
 export interface StateMessageMeta {
 	/** Agent turns (turn_end events) since the last workmap call, accumulated across runs. */
@@ -6,34 +6,33 @@ export interface StateMessageMeta {
 }
 
 /**
- * Render the workmap as a scannable, tree-ordered text listing for the persisted context message.
- * Ids stay inline so the model can target them in update/remove calls. Notes are user-facing
- * alignment rationale and stay out of the message: the model already knows its own reasoning,
- * and durable context is compaction's job, not this snapshot's.
+ * Render trees as a scannable indented listing. Root ids stay inline so the model can
+ * target them in update/remove calls; children have no id and are addressed by
+ * replacing their tree. Notes are user-facing alignment rationale and stay out: the
+ * model already knows its own reasoning, and durable context is compaction's job.
  */
-export function renderStateMessage(nodes: WorkmapNode[], meta: StateMessageMeta = {}): string {
-	const ids = new Set(nodes.map((node) => node.id));
-	const children = new Map<string, WorkmapNode[]>();
+export function renderTreeLines(roots: WorkmapRoot[]): string[] {
 	// Heading roots lead the listing: the anchor precedes the details.
-	const roots: WorkmapNode[] = [
-		...nodes.filter((node) => !(node.parentId && ids.has(node.parentId)) && node.type === "heading"),
-		...nodes.filter((node) => !(node.parentId && ids.has(node.parentId)) && node.type !== "heading"),
+	const ordered = [
+		...roots.filter((root) => root.type === "heading"),
+		...roots.filter((root) => root.type !== "heading"),
 	];
-	for (const node of nodes) {
-		if (node.parentId && ids.has(node.parentId)) {
-			const siblings = children.get(node.parentId) ?? [];
-			siblings.push(node);
-			children.set(node.parentId, siblings);
-		}
-	}
 	const lines: string[] = [];
-	const visit = (node: WorkmapNode, depth: number): void => {
+	const visit = (node: WorkmapChild, depth: number, id?: string): void => {
 		const indent = "  ".repeat(depth);
 		const status = node.status ? ` [${node.status}]` : "";
-		lines.push(`${indent}${node.type} ${node.id}${status}: ${node.title}`);
-		for (const child of children.get(node.id) ?? []) visit(child, depth + 1);
+		lines.push(`${indent}${node.type}${id ? ` ${id}` : ""}${status}: ${node.title}`);
+		for (const child of node.children ?? []) visit(child, depth + 1);
 	};
-	for (const root of roots) visit(root, 0);
+	for (const root of ordered) visit(root, 0, root.id);
+	return lines;
+}
+
+/**
+ * Render the workmap as the persisted context message.
+ */
+export function renderStateMessage(nodes: WorkmapRoot[], meta: StateMessageMeta = {}): string {
+	const lines = renderTreeLines(nodes);
 	// A bare counter, not persuasion: the footer already carries the standing instruction,
 	// and the number lets the model see the anchor going stale (ADR 0010).
 	const staleness =
@@ -47,7 +46,7 @@ export function renderStateMessage(nodes: WorkmapNode[], meta: StateMessageMeta 
 		...lines,
 		...(staleness ? ["", staleness] : []),
 		"",
-		"Keep it concise and current with the workmap tool as your heading, understanding, decisions, tasks, or detected drift materially change.",
+		"Keep it concise and current with the workmap tool as your direction materially changes: heading before investigating, updates as you learn — not after you finish.",
 		"</workmap-state>",
 	].join("\n");
 }

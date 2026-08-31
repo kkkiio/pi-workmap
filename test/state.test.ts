@@ -1,9 +1,9 @@
 import type { ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
-import { WORKMAP_ENTRY_TYPE, WorkmapState } from "../src/state.js";
-import type { WorkmapNode, WorkmapSnapshot } from "../src/types.js";
+import { MAX_WORKMAP_DEPTH, WORKMAP_ENTRY_TYPE, WorkmapState } from "../src/state.js";
+import type { WorkmapRoot, WorkmapSnapshot } from "../src/types.js";
 
-const goal: WorkmapNode = { id: "fix_auth", type: "heading", title: "Stop random logouts", status: "current" };
+const goal: WorkmapRoot = { id: "fix_auth", type: "heading", title: "Stop random logouts", status: "current" };
 
 function sessionWith(entries: SessionEntry[]): ExtensionContext["sessionManager"] {
 	return {
@@ -12,7 +12,7 @@ function sessionWith(entries: SessionEntry[]): ExtensionContext["sessionManager"
 }
 
 describe("WorkmapState", () => {
-	it("atomically upserts semantic nodes and preserves their order", () => {
+	it("upserts whole trees by root id and preserves their position", () => {
 		const state = new WorkmapState();
 		expect(
 			state.update(
@@ -22,7 +22,7 @@ describe("WorkmapState", () => {
 						id: "refresh_race",
 						type: "task",
 						title: "Check whether refresh can race across workers",
-						parentId: "fix_auth",
+						children: [{ type: "task", title: "Trace worker IDs" }],
 					},
 				],
 				[],
@@ -32,34 +32,55 @@ describe("WorkmapState", () => {
 		expect(state.update([{ ...goal, title: "Keep users signed in" }], [])).toEqual({ changed: true });
 		expect(state.list().map((node) => node.id)).toEqual(["fix_auth", "refresh_race"]);
 		expect(state.list()[0]?.title).toBe("Keep users signed in");
+		expect(state.list()[1]?.children).toHaveLength(1);
 	});
 
-	it("rejects invalid ids, missing parents, and cycles without changing state", () => {
+	it("replaces the entire subtree when a root is re-upserted", () => {
+		const state = new WorkmapState();
+		state.update([{ ...goal, children: [{ type: "task", title: "Old child" }] }], []);
+
+		state.update([goal], []);
+
+		expect(state.list()[0]?.children).toBeUndefined();
+	});
+
+	it("removes whole trees by root id", () => {
+		const state = new WorkmapState();
+		state.update([goal, { id: "side_quest", type: "task", title: "Polish glyphs" }], []);
+
+		expect(state.update([], ["side_quest"])).toEqual({ changed: true });
+		expect(state.update([], ["missing"])).toEqual({ changed: false });
+		expect(state.list().map((node) => node.id)).toEqual(["fix_auth"]);
+	});
+
+	it("rejects invalid roots, child ids, and excessive depth without changing state", () => {
 		const state = new WorkmapState();
 		state.update([goal], []);
 
 		expect(state.update([{ id: "Fix Auth", type: "heading", title: "Bad id" }], []).error).toContain(
 			"Invalid semantic id",
 		);
-		expect(state.update([{ id: "orphan", type: "task", title: "Orphan", parentId: "missing" }], []).error).toContain(
-			"does not exist",
-		);
 		expect(
 			state.update(
-				[
-					{ id: "left", type: "decision", title: "Left", parentId: "right" },
-					{ id: "right", type: "option", title: "Right", parentId: "left" },
-				],
+				[{ id: "ok_id", type: "task", title: "T", children: [{ id: "nested", type: "task", title: "C" } as never] }],
 				[],
 			).error,
-		).toContain("cycle");
+		).toContain("must not carry ids");
+
+		const deep: WorkmapRoot = { id: "deep", type: "task", title: "root" };
+		let cursor = deep;
+		for (let level = 2; level <= MAX_WORKMAP_DEPTH + 1; level += 1) {
+			cursor.children = [{ type: "task", title: `level ${level}` }];
+			cursor = cursor.children[0] as WorkmapRoot;
+		}
+		expect(state.update([deep], []).error).toContain("nesting");
 		expect(state.list()).toEqual([goal]);
 	});
 
-	it("restores the latest snapshot from the whole session rather than the active branch", () => {
-		const oldSnapshot: WorkmapSnapshot = { version: 1, nodes: [goal] };
+	it("restores the latest v2 snapshot from the whole session rather than the active branch", () => {
+		const oldSnapshot: WorkmapSnapshot = { version: 2, nodes: [goal] };
 		const latestSnapshot: WorkmapSnapshot = {
-			version: 1,
+			version: 2,
 			nodes: [{ id: "new_direction", type: "drift", title: "Implementation follows an obsolete decision" }],
 		};
 		const entries = [oldSnapshot, latestSnapshot].map(
@@ -80,14 +101,10 @@ describe("WorkmapState", () => {
 		expect(state.list()).toEqual(latestSnapshot.nodes);
 	});
 
-	it("migrates legacy unknown, goal, and direction nodes on restore", () => {
+	it("skips legacy flat snapshots: workmap state is ephemeral by design", () => {
 		const legacySnapshot = {
 			version: 1,
-			nodes: [
-				{ ...goal, type: "goal" },
-				{ id: "phase_two", type: "direction", title: "Land the confirmed changes" },
-				{ id: "refresh_race", type: "unknown", title: "Can refresh race across workers?", parentId: "fix_auth" },
-			],
+			nodes: [goal, { id: "child", type: "task", title: "Flat child", parentId: "fix_auth" }],
 		};
 		const entries = [
 			{
@@ -103,7 +120,6 @@ describe("WorkmapState", () => {
 
 		state.restore(sessionWith(entries));
 
-		expect(state.list().map((node) => node.type)).toEqual(["heading", "heading", "understanding"]);
-		expect(state.list()[2]?.parentId).toBe("fix_auth");
+		expect(state.list()).toEqual([]);
 	});
 });

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { TerminalRenderer } from "./terminal-renderer.js";
+import { FreezeRenderer } from "./freeze-renderer.js";
 
 const exec = promisify(execFile);
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -62,21 +62,17 @@ try {
 	]);
 	await new Promise((resolvePromise) => setTimeout(resolvePromise, 200));
 	await mkdir(join(root, "docs/assets"), { recursive: true });
-	const renderer = await TerminalRenderer.start();
-	try {
-		await capture(renderer, "workmap-session-compact.png");
-		await exec("tmux", ["send-keys", "-t", `${sessionName}:0.0`, "C-o"]);
-		await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
-		await capture(renderer, "workmap-session.png");
-	} finally {
-		await renderer.close();
-	}
+	const renderer = new FreezeRenderer(root);
+	await capture(renderer, "workmap-session-compact.png");
+	await exec("tmux", ["send-keys", "-t", `${sessionName}:0.0`, "C-o"]);
+	await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
+	await capture(renderer, "workmap-session.png");
 } finally {
 	await exec("tmux", ["kill-session", "-t", sessionName]).catch(() => undefined);
 	await rm(temporary, { recursive: true, force: true });
 }
 
-async function capture(renderer: TerminalRenderer, outputName: string): Promise<void> {
+async function capture(renderer: FreezeRenderer, outputName: string): Promise<void> {
 	const { stdout: ansi } = await exec("tmux", ["capture-pane", "-p", "-e", "-t", `${sessionName}:0.0`], {
 		maxBuffer: 1024 * 1024,
 	});
@@ -91,5 +87,5 @@ async function capture(renderer: TerminalRenderer, outputName: string): Promise<
 		.slice(0, lastContentRow + 1)
 		.join("\n")
 		.replaceAll(demoCwd, "~/projects/auth-service");
-	await renderer.screenshot(content, columns, lastContentRow + 1, join(root, "docs/assets", outputName));
+	await renderer.screenshot(content, join(root, "docs/assets", outputName));
 }

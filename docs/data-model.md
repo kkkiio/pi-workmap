@@ -2,9 +2,9 @@
 
 ## 设计原则
 
-V1 是一个 Agent-maintained、session-global 的 typed tree。节点表达当前仍影响 Agent 方向的信息，而不是保存完整历史。一个 session 可以有多个平级 Heading；Heading 不是其他元素的强制容器，也不增加 Workstream。
+Workmap 是一个 Agent-maintained、session-global 的 typed tree。节点表达当前仍影响 Agent 方向的信息，而不是保存完整历史。一个 session 可以有多个平级 Heading；Heading 不是其他元素的强制容器，也不增加 Workstream。
 
-UI 以 tree 为主，每个节点最多一个可选 `parentId`。V1 不提供 refs、cross-reference 或 DAG renderer；`parentId` 只服务信息表达与阅读顺序，不承担工作组织语义。
+UI 以 tree 为主：root 通过嵌套 `children` 表达层级，single-parent 由构造保证。不提供 refs、cross-reference 或 DAG renderer；层级只服务信息表达与阅读顺序，不承担工作组织语义。
 
 ## Node types
 
@@ -29,32 +29,32 @@ UI 以 tree 为主，每个节点最多一个可选 `parentId`。V1 不提供 re
 ## Node shape
 
 ```text
-Node
+Root（顶层树）
 ├─ id          semantic snake_case, stable, session-unique
 ├─ type        heading | understanding | decision | option | task | drift
 ├─ title       one scannable sentence
 ├─ status?     short free-form label
 ├─ note?       optional one- or two-sentence explanation
-└─ parentId?   optional display parent
+└─ children?   Child[]（递归；Child 与 Root 同构但没有 id）
 ```
 
 约束：
 
-- `id` 在 session 内稳定且唯一，例如 `refresh_race`、`server_idempotency`。
+- 只有 root 携带 `id`，例如 `refresh_race`、`server_idempotency`；子节点无 id，随树生灭（ADR 0011）。
 - `status` 是 display annotation，不参与状态机或 compact 筛选；避免重复 icon 已表达的信息。
 - `note` 只放支持理解所必需的依据、trade-off 或条件，不充当 scratchpad。
-- `parentId` 可自由嵌套，但必须引用现存节点且不能形成 cycle。Option 通常位于相关 Decision 下，这一语义由 Agent guidance 保持，不在 schema 中硬编码。Task 之间也可嵌套表达分组；嵌套只表达信息结构，不承载依赖、进度汇总或完成归档等执行追踪语义。
-- 当前实现最多保留 32 个节点，促使 Agent 裁剪已经 resolved、done 或不再影响方向的内容。
+- `children` 自由嵌套（深度上限 8），single-parent 由构造保证——不存在 dangling parent 或 cycle。Option 通常位于相关 Decision 下，这一语义由 Agent guidance 保持。Task 之间也可嵌套表达分组；嵌套只表达信息结构，不承载依赖、进度汇总或完成归档等执行追踪语义。
+- 当前实现最多保留 32 个节点（递归计数），促使 Agent 裁剪已经 resolved、done 或不再影响方向的内容。
 
 ## Mutation model
 
 Agent 通过一个 `workmap` tool 维护状态：
 
-- `update`：原子 upsert 完整节点，并可同时 remove 过期节点；
+- `update`：以**整棵树**为粒度 upsert（按 root id 原位替换整个子树）或按 root id 移除；
 - `view`：读取当前 map；
 - `clear`：清空当前 session 的 map。
 
-更新保留已有节点的显示位置，新节点追加到末尾；唯一例外是 Heading 类型的 root 始终渲染在最前（技术文档的 Goals 小节惯例：锚先于细节）。任何 duplicate ID、missing parent 或 cycle 都会拒绝整次更新，不产生半完成状态。
+Upsert 已存在的 root 保留其显示位置，新 root 追加到末尾；唯一例外是 Heading 类型的 root 始终渲染在最前（技术文档的 Goals 小节惯例：锚先于细节）。替换是整体的：重发 root 时遗漏 `children` 即删除该子树。任何 duplicate root id、子节点携带 id 或超深嵌套都会拒绝整次更新，不产生半完成状态。每次成功调用后，tool result 回显当前树的紧凑文本，让模型核对自己声明的结构。
 
 ## Session semantics
 
@@ -64,6 +64,6 @@ Agent 通过一个 `workmap` tool 维护状态：
 - `resume` 恢复整场协作的最新 map；
 - interactive fork 把当前内存 snapshot 写入新 session，之后独立演化；
 - `new session` 从空 map 开始；
-- snapshot 不自动进入 Agent context；extension 会在每个 agent run 前为模型重新注入一份隐藏的 current-state 快照（只含结构与标题，note 是面向用户的对齐依据，不进入注入快照；快照尾部附 staleness 计数，见 [ADR 0010](adr/0010-staleness-counter-reinjection.md)）。0.x 早期快照中的 `unknown` 节点在恢复时迁移为 `understanding`，`goal`/`direction` 节点迁移为 `heading`。
+- snapshot 不自动进入 Agent context；extension 会在每个 agent run 前为模型重新注入一份隐藏的 current-state 快照（只含结构与标题，note 是面向用户的对齐依据，不进入注入快照；快照尾部附 staleness 计数，见 [ADR 0010](adr/0010-staleness-counter-reinjection.md)）。旧 flat/parentId 快照不迁移：workmap 是当前态势感知而非长期存储，旧 map 随会话演进自然过期（ADR 0011）。
 
 这与普通 branch-local todo 的因果回放不同：workmap 是整场协作当前共同看到的白板，而不是某个历史分支当时拥有的任务列表。

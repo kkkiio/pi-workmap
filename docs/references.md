@@ -22,7 +22,7 @@
 
 - 链接：[GitHub — eleqtrizit/pi-tasks](https://github.com/eleqtrizit/pi-tasks)
 - 可借鉴点：双向 `blocks` / `blockedBy`、dependency-aware 状态转换、parallel-ready task 查询与实时 widget，说明 DAG 很适合执行调度。
-- 差异：底层关系丰富但主要服务 task graph；`pi-workmap` 优先让 human 扫读 shared understanding，因此 V1 只采用 single-parent tree，不提供 refs 或 task DAG。
+- 差异：底层关系丰富但主要服务 task graph；`pi-workmap` 优先让 human 扫读 shared understanding，因此只采用 single-parent tree，不提供 refs 或 task DAG。
 
 ### `pi-todotools`
 
