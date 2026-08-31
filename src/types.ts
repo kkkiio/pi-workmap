@@ -1,4 +1,4 @@
-export const WORKMAP_NODE_TYPES = ["goal", "understanding", "unknown", "decision", "option", "task", "drift"] as const;
+export const WORKMAP_NODE_TYPES = ["heading", "understanding", "decision", "option", "task", "drift"] as const;
 
 export type WorkmapNodeType = (typeof WORKMAP_NODE_TYPES)[number];
 

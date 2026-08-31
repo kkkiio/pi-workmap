@@ -13,7 +13,7 @@ describe("workmap extension lifecycle", () => {
 	it("inherits the session-global workmap when a fork omits the latest branch", async () => {
 		const snapshot: WorkmapSnapshot = {
 			version: 1,
-			nodes: [{ id: "current_goal", type: "goal", title: "Keep the latest session direction" }],
+			nodes: [{ id: "current_goal", type: "heading", title: "Keep the latest session direction" }],
 		};
 		const sourceSession = SessionManager.inMemory();
 		sourceSession.appendCustomEntry(WORKMAP_ENTRY_TYPE, snapshot);
