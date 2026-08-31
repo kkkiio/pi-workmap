@@ -32,8 +32,8 @@ export class WorkmapState {
 			const entry = entries[index];
 			if (entry.type !== "custom" || entry.customType !== WORKMAP_ENTRY_TYPE) continue;
 			const data = entry.data as Partial<WorkmapSnapshot> | undefined;
-			// v1 flat snapshots predate the nested schema and are simply skipped: the
-			// package was never published, so no released session data needs migration.
+			// Legacy flat snapshots predate the nested schema and are simply skipped:
+			// the package was never published, so no released session data needs migration.
 			if (data?.version !== 2 || !Array.isArray(data.nodes)) continue;
 			const result = this.validate(data.nodes);
 			if (typeof result === "string") continue;

@@ -1,4 +1,4 @@
-# ADR 0002: V1 只有 `parentId` 一种关系，不做 refs 或 DAG
+# ADR 0002: 只有 `parentId` 一种关系，不做 refs 或 DAG
 
 - Status: Accepted（表达形式由 [ADR 0011](0011-nested-children-root-ids.md) 修订：parentId 引用改为嵌套 children，single-parent 由构造保证）
 - Date: 2026-08-30
@@ -11,7 +11,7 @@ Workmap 节点之间天然存在横向关系：Task 可能为了回答某个 Unk
 
 ## Decision
 
-V1 中节点之间唯一的关系是可选的 `parentId`，构成 single-parent tree：
+节点之间唯一的关系是可选的 `parentId`，构成 single-parent tree：
 
 - 不提供 refs、cross-reference 字段或 DAG 渲染。
 - 不引入 Workstream 等额外容器，也不要求 Goal 必须组织其他节点；任何节点都可以是 root，多个 Goal 可以平级。

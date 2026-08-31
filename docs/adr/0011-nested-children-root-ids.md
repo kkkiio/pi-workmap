@@ -18,7 +18,7 @@
 3. **树粒度替换语义**：upsert 一个 root 整体替换其子树（原位替换保持顺序）；遗漏 children = 删除子树。该语义写入 schema description 与 guidelines，保持响亮。
 4. **update result 回显树**：成功/失败计数之后附紧凑树形文本，让"遗漏导致的结构变化"在下一轮直接可见——这是对第 1 点配套风险的暴露机制。
 5. **时序引导**：guidelines 加入唯一的 MUST——"You MUST have a heading before your first investigation or action after a user prompt"，并明确"an update saved for the final reply is a postmortem, not a workmap"；注入快照页脚同步带时序（heading before investigating, updates as you learn — not after you finish）。MUST 只给满足成本极低、客观可检查、击穿核心价值的规则，其余保持普通语气。
-6. **不迁移 v1 快照**：restore 只认 `version: 2`，v1 直接跳过。Workmap 的语义是当前态势感知而非长期存储——旧会话的 map 随代码与理解的演进而自然过期，重要结论应沉淀到文档；忽略旧数据与产品语义一致（0.x 阶段方针见 AGENTS.md）。
+6. **不迁移旧 flat 快照**：restore 只认 `version: 2`，旧 flat/parentId 快照直接跳过。Workmap 的语义是当前态势感知而非长期存储——旧会话的 map 随代码与理解的演进而自然过期，重要结论应沉淀到文档；忽略旧数据与产品语义一致（0.x 阶段方针见 AGENTS.md）。
 
 ## Consequences
 

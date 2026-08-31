@@ -101,8 +101,8 @@ describe("WorkmapState", () => {
 		expect(state.list()).toEqual(latestSnapshot.nodes);
 	});
 
-	it("skips legacy v1 snapshots: workmap state is ephemeral by design", () => {
-		const v1Snapshot = {
+	it("skips legacy flat snapshots: workmap state is ephemeral by design", () => {
+		const legacySnapshot = {
 			version: 1,
 			nodes: [goal, { id: "child", type: "task", title: "Flat child", parentId: "fix_auth" }],
 		};
@@ -113,7 +113,7 @@ describe("WorkmapState", () => {
 				parentId: null,
 				timestamp: new Date(0).toISOString(),
 				customType: WORKMAP_ENTRY_TYPE,
-				data: v1Snapshot,
+				data: legacySnapshot,
 			} as SessionEntry,
 		];
 		const state = new WorkmapState();

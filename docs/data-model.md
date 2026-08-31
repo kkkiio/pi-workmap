@@ -2,9 +2,9 @@
 
 ## 设计原则
 
-V1 是一个 Agent-maintained、session-global 的 typed tree。节点表达当前仍影响 Agent 方向的信息，而不是保存完整历史。一个 session 可以有多个平级 Heading；Heading 不是其他元素的强制容器，也不增加 Workstream。
+Workmap 是一个 Agent-maintained、session-global 的 typed tree。节点表达当前仍影响 Agent 方向的信息，而不是保存完整历史。一个 session 可以有多个平级 Heading；Heading 不是其他元素的强制容器，也不增加 Workstream。
 
-UI 以 tree 为主：root 通过嵌套 `children` 表达层级，single-parent 由构造保证。V1 不提供 refs、cross-reference 或 DAG renderer；层级只服务信息表达与阅读顺序，不承担工作组织语义。
+UI 以 tree 为主：root 通过嵌套 `children` 表达层级，single-parent 由构造保证。不提供 refs、cross-reference 或 DAG renderer；层级只服务信息表达与阅读顺序，不承担工作组织语义。
 
 ## Node types
 
@@ -64,6 +64,6 @@ Upsert 已存在的 root 保留其显示位置，新 root 追加到末尾；唯�
 - `resume` 恢复整场协作的最新 map；
 - interactive fork 把当前内存 snapshot 写入新 session，之后独立演化；
 - `new session` 从空 map 开始；
-- snapshot 不自动进入 Agent context；extension 会在每个 agent run 前为模型重新注入一份隐藏的 current-state 快照（只含结构与标题，note 是面向用户的对齐依据，不进入注入快照；快照尾部附 staleness 计数，见 [ADR 0010](adr/0010-staleness-counter-reinjection.md)）。v1（flat/parentId）快照不迁移：workmap 是当前态势感知而非长期存储，旧 map 随会话演进自然过期（ADR 0011）。
+- snapshot 不自动进入 Agent context；extension 会在每个 agent run 前为模型重新注入一份隐藏的 current-state 快照（只含结构与标题，note 是面向用户的对齐依据，不进入注入快照；快照尾部附 staleness 计数，见 [ADR 0010](adr/0010-staleness-counter-reinjection.md)）。旧 flat/parentId 快照不迁移：workmap 是当前态势感知而非长期存储，旧 map 随会话演进自然过期（ADR 0011）。
 
 这与普通 branch-local todo 的因果回放不同：workmap 是整场协作当前共同看到的白板，而不是某个历史分支当时拥有的任务列表。
