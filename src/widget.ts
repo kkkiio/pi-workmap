@@ -8,7 +8,7 @@ const COMPACT_NODE_LIMIT = 5;
 const COMPACT_CLUSTER_LIMIT = 3;
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;
-// Every glyph occupies a two-column cell so double-width glyphs (⚡) keep titles left-aligned.
+// Every glyph occupies a two-column cell so double-width glyphs keep titles left-aligned.
 const GLYPH_CELL_WIDTH = 2;
 export const PRESENTATION: Record<
 	WorkmapNodeType,
@@ -19,7 +19,7 @@ export const PRESENTATION: Record<
 	decision: { glyph: "◆", glyphColor: "accent" },
 	option: { glyph: "◇", glyphColor: "text" },
 	task: { glyph: "□", glyphColor: "text" },
-	drift: { glyph: "⚡", glyphColor: "error" },
+	drift: { glyph: "⎇", glyphColor: "error" },
 };
 const COMPACT_PRIORITY: Record<WorkmapNodeType, number> = {
 	heading: 0,

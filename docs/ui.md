@@ -12,7 +12,7 @@ Workmap 是 editor 上方的常驻 widget。它复用 Pi 官方 `app.tools.expan
 ◆  Decision
 ◇  Option
 □  Task
-⚡ Drift
+⎇ Drift
 ```
 
 用色遵循 Pi 和 `pi-tasks` 的克制方式：正文与普通 glyph 使用默认文字色；Goal / Decision glyph 使用 accent，Drift 使用 error；`status`、tree connector 与 `note` 使用 dim。灰色只表示辅助信息，不额外编码领域状态。
@@ -65,7 +65,7 @@ Decision 表示需要权衡或已承诺的选择：斟酌中时 title 可以写�
 Workmap · 9 signals · 1 drift                            ctrl+o expand
 ◎ Keep users signed in reliably                               current
 ◎ Keep authentication architecture simple                   long-term
-⚡ The client-only fix assumes a single worker              detected
+⎇ The client-only fix assumes a single worker              detected
 ◆ Where should refresh serialization live?               considering
 ├─ ◇ Serialize in the client                              candidate
   … 4 more · 1 option · 2 tasks · 1 understanding
@@ -78,7 +78,7 @@ compact 按 cluster 采样而不是按节点：子节点脱离 parent 会失去�
 ```text
 Workmap · 7 signals · 1 drift                            ctrl+o compact
 ◎ Preserve existing client behavior                           current
-⚡ Implementation started changing the public API            detected
+⎇ Implementation started changing the public API            detected
    The user asked for an internal fix without API changes.
 ◆ Keep the public API stable                                  chosen
 □ Move serialization behind the existing refresh method       active
@@ -92,7 +92,7 @@ Drift 出现意味着 Agent 已识别真实不一致；它不是泛化的风险�
 - compact 以 cluster 为单位采样、每簇最多 3 行；expanded 显示完整 tree 与最多两行 note。
 - header 的 drift 计数使用 error 色；drift 是唯一"晚看比早看贵"的信号，显著性必须第一。
 - Heading 类型的 root 在 expanded 视图与注入快照中始终置顶：锚先于细节。
-- 所有 glyph 统一按两个终端列宽的单元格渲染，双宽的 ⚡ 与其他 glyph 的 title 保持同列左对齐。
+- 所有 glyph 统一按两个终端列宽的单元格渲染，宽于单列的 glyph 也与其他 glyph 的 title 保持同列左对齐。
 - `status` 只在 title 至少保留 20 列时右对齐；窄终端先隐藏 status 与快捷键 hint，优先保留 title。
 - node title 保持单行可扫读，note 只解释必要证据、条件或 trade-off。
 - 只有嵌套 `children` 构成的 single-parent tree；不显示 refs 或 DAG edges。
