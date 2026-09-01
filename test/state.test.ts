@@ -254,6 +254,40 @@ describe("WorkmapState", () => {
 		expect(state.list()).toEqual([]);
 	});
 
+	it("skips snapshots with deeper nesting than the schema allows", () => {
+		const deep: { id: string; type: "task"; title: string; children?: never[] } = {
+			id: "deep",
+			type: "task",
+			title: "root",
+		};
+		let cursor = deep as unknown as {
+			id: string;
+			type: "task";
+			title: string;
+			children?: { id?: string; type: "task"; title: string }[];
+		};
+		for (let level = 2; level <= 4; level += 1) {
+			const child = { type: "task" as const, title: `level ${level}` };
+			cursor.children = [child];
+			cursor = child as typeof cursor;
+		}
+		const entries = [
+			{
+				type: "custom",
+				id: "entry-0",
+				parentId: null,
+				timestamp: new Date(0).toISOString(),
+				customType: WORKMAP_ENTRY_TYPE,
+				data: { version: 3, nodes: [{ ...deep, updatedAt: 1 }] },
+			} as unknown as SessionEntry,
+		];
+		const state = new WorkmapState();
+
+		state.restore(sessionWith(entries));
+
+		expect(state.list()).toEqual([]);
+	});
+
 	it("skips legacy snapshots: workmap state is ephemeral by design", () => {
 		const legacySnapshot = {
 			version: 2,

@@ -12,8 +12,9 @@ import {
 
 export const WORKMAP_ENTRY_TYPE = "pi-workmap-state";
 export const MAX_WORKMAP_NODES = 10;
-// Depth is enforced by the provider-facing schema unroll (index.ts); there is no
-// runtime depth check. Three levels: root, children, grandchildren (ADR 0013).
+// Depth is enforced on tool calls by the provider-facing schema unroll (index.ts);
+// restore() bypasses that schema, so validate() still checks it at runtime.
+// Three levels: root, children, grandchildren (ADR 0013).
 export const MAX_WORKMAP_DEPTH = 3;
 const SEMANTIC_ID = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
 
@@ -170,7 +171,7 @@ export class WorkmapState {
 			if (typeof candidate.id !== "string" || !SEMANTIC_ID.test(candidate.id))
 				return `Invalid semantic id: ${candidate.id ?? "missing"}`;
 			if (ids.has(candidate.id)) return `Duplicate root id: ${candidate.id}`;
-			const error = validateNode(candidate);
+			const error = validateNode(candidate, 1);
 			if (error) return `Root ${candidate.id}: ${error}`;
 			ids.add(candidate.id);
 			roots.push({ ...candidate } as WorkmapRoot);
@@ -202,17 +203,18 @@ function evictToCapacity(entries: StoredEntry[], capacity: number): { kept: Stor
 	return { kept: entries.filter((entry) => !evictedIds.has(entry.root.id)), evicted };
 }
 
-function validateNode(node: Partial<WorkmapChild>): string | undefined {
+function validateNode(node: Partial<WorkmapChild>, depth: number): string | undefined {
 	if (!WORKMAP_NODE_TYPES.includes(node.type as WorkmapNodeType)) return "invalid node type";
 	if (typeof node.title !== "string" || !node.title.trim() || node.title.length > 120) return "invalid title";
 	if (node.status !== undefined && (typeof node.status !== "string" || node.status.length > 24))
 		return "invalid status";
 	if (node.children === undefined) return undefined;
 	if (!Array.isArray(node.children)) return "children must be an array";
+	if (depth >= MAX_WORKMAP_DEPTH) return `nesting deeper than ${MAX_WORKMAP_DEPTH} levels`;
 	for (const child of node.children) {
 		if (!child || typeof child !== "object") return "every child must be an object";
 		if (typeof (child as WorkmapRoot).id === "string") return "children must not carry ids; only roots are addressable";
-		const error = validateNode(child);
+		const error = validateNode(child, depth + 1);
 		if (error) return error;
 	}
 	return undefined;

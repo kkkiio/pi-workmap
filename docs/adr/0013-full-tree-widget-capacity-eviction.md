@@ -22,7 +22,7 @@ compact 采样把排序压力放在**渲染层**：簇按对齐价值排序、�
    - 第二档：无第一档候选时，驱逐最老的 root（含 heading）；
    - 驱逐结果以 `id (title)` 列表回显进 tool result；被驱逐状态同时经每 run 注入快照可见。
    - 唯一报错例外：单个 update 本身就超过容量（换任何驱逐策略都放不下），拒绝该次调用并提示拆分。
-5. **运行时深度校验删除**，深度由 provider schema 的 unroll 兜底，unroll 收紧到 3 层（root / children / grandchildren）。原因：provider 侧 schema 不支持 `$ref`，递归只能展开定深，运行时再查一遍是重复约束；10 节点预算下 8 层嵌套也没有存在空间。
+5. **工具调用路径的深度由 provider schema 的 unroll 兜底**，unroll 收紧到 3 层（root / children / grandchildren）；restore 不经过 schema，保留运行时深度校验以拒绝超深快照。10 节点预算下更深的嵌套也没有存在空间。
 6. **持久化快照升 version 3**：每个 root 携带 `updatedAt`（树龄 = 最近一次 upsert 的时间，重申即续期），note 字段移除。旧快照跳过不迁移——包未发布，无已发布数据需要兼容（ADR 0011 先例）。
 
 ## Rationale

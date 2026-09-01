@@ -130,7 +130,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
 			"You MUST have a heading before your first action after a user prompt — your best present reading of what the user wants, declared even at low confidence, because a corrected heading is a reward. Re-examine it at every phase shift and after every user correction: update it when your understanding changed, even if the user's words did not. A heading names the destination, never the route; routes are decisions. A heading takes status current or long-term.",
-			"Use drift for a detected mismatch with the declared plan. Remove it once the mismatch resolves through correction or completion of the affected work, recording any lasting conclusion as a decision or understanding first.",
+			"Use drift for a detected mismatch with the user's request or the declared plan. Remove it once the mismatch resolves through correction or completion of the affected work, recording any lasting conclusion as a decision or understanding first.",
 			"Use decision for deliberation or commitments (title it as a question while deliberating, and once decided append the conclusion to the title, e.g. 'Where should X live? → on the server', keeping the question for context; status considering while open, chosen once settled), option only for considered decision alternatives.",
 			"Use understanding for current facts/models/hypotheses (status hypothesis marks an unverified premise).",
 			"Use task for current action (status active, done, or blocked; blocked means work cannot proceed without the user — stop and ask in conversation instead of only marking the map).",
@@ -199,6 +199,9 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			if (!details) return new Text("", 0, 0);
 			if (details.error) return new Text(theme.fg("error", details.error), 0, 0);
 			let text = theme.fg("success", details.changed ? "Workmap updated" : "Workmap unchanged");
+			if (details.evicted && details.evicted.length > 0) {
+				text += `\n${theme.fg("dim", `Evicted over capacity: ${details.evicted.map((node) => `${node.id} (${node.title})`).join(", ")}`)}`;
+			}
 			if (expanded && details.nodes.length > 0) {
 				const rows: string[] = [];
 				const visit = (node: WorkmapChild, depth: number, id?: string): void => {

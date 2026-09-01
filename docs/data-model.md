@@ -41,7 +41,7 @@ Root（顶层树）
 
 - 只有 root 携带 `id`，例如 `refresh_race`、`server_idempotency`；子节点无 id，随树生灭（ADR 0011）。
 - `status` 是 display annotation，不参与状态机；避免重复 icon 已表达的信息。
-- `children` 自由嵌套（深度由 provider schema unroll 兜底，三层：root、children、grandchildren），single-parent 由构造保证——不存在 dangling parent 或 cycle。Option 通常位于相关 Decision 下，这一语义由 Agent guidance 保持。Task 之间也可嵌套表达分组；嵌套只表达信息结构，不承载依赖、进度汇总或完成归档等执行追踪语义。
+- `children` 自由嵌套（三层：root、children、grandchildren；tool 调用由 schema unroll 兜底，快照恢复由运行时校验兜底），single-parent 由构造保证——不存在 dangling parent 或 cycle。Option 通常位于相关 Decision 下，这一语义由 Agent guidance 保持。Task 之间也可嵌套表达分组；嵌套只表达信息结构，不承载依赖、进度汇总或完成归档等执行追踪语义。
 - 当前实现最多保留 10 个节点（递归计数）。超限时 update 不会报错，而是自动驱逐整棵子树：最久未 upsert 且不含活信号（drift、considering Decision、blocked Task）的树先驱逐，其次最老的树，刚刚 upsert 的树不参与驱逐；被驱逐的 root 以 `id (title)` 列表回显进 tool result（ADR 0013）。唯一报错例外是单次 update 自身就超过容量，此时拒绝整次更新并提示拆分。
 
 ## Mutation model
