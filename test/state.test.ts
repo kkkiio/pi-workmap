@@ -232,6 +232,28 @@ describe("WorkmapState", () => {
 		expect(ids).not.toContain("root1");
 	});
 
+	it("skips snapshots with malformed nodes instead of crashing", () => {
+		const snapshot = {
+			version: 3,
+			nodes: [null, goal],
+		};
+		const entries = [
+			{
+				type: "custom",
+				id: "entry-0",
+				parentId: null,
+				timestamp: new Date(0).toISOString(),
+				customType: WORKMAP_ENTRY_TYPE,
+				data: snapshot,
+			} as unknown as SessionEntry,
+		];
+		const state = new WorkmapState();
+
+		state.restore(sessionWith(entries));
+
+		expect(state.list()).toEqual([]);
+	});
+
 	it("skips legacy snapshots: workmap state is ephemeral by design", () => {
 		const legacySnapshot = {
 			version: 2,

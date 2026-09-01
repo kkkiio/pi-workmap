@@ -58,6 +58,9 @@ export class WorkmapState {
 			// the package was never published, and workmap state is ephemeral by design.
 			if (data?.version !== 3 || !Array.isArray(data.nodes)) continue;
 			const storedNodes: WorkmapSnapshotNode[] = data.nodes;
+			// Guard before destructuring: a malformed node (e.g. null) must skip the
+			// snapshot, not crash session start.
+			if (storedNodes.some((node) => !node || typeof node !== "object")) continue;
 			const result = this.validate(storedNodes.map(({ updatedAt: _age, ...root }) => root));
 			if (typeof result === "string") continue;
 			const now = Date.now();
