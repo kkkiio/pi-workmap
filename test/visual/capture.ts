@@ -63,9 +63,7 @@ try {
 	await new Promise((resolvePromise) => setTimeout(resolvePromise, 200));
 	await mkdir(join(root, "docs/assets"), { recursive: true });
 	const renderer = new FreezeRenderer(root);
-	await capture(renderer, "workmap-session-compact.png");
-	await exec("tmux", ["send-keys", "-t", `${sessionName}:0.0`, "C-o"]);
-	await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
+	// Single rendering mode (ADR 0013): there is no compact/expanded toggle anymore.
 	await capture(renderer, "workmap-session.png");
 } finally {
 	await exec("tmux", ["kill-session", "-t", sessionName]).catch(() => undefined);

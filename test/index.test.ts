@@ -12,8 +12,8 @@ import type { WorkmapSnapshot } from "../src/types.js";
 describe("workmap extension lifecycle", () => {
 	it("inherits the session-global workmap when a fork omits the latest branch", async () => {
 		const snapshot: WorkmapSnapshot = {
-			version: 2,
-			nodes: [{ id: "current_goal", type: "heading", title: "Keep the latest session direction" }],
+			version: 3,
+			nodes: [{ id: "current_goal", type: "heading", title: "Keep the latest session direction", updatedAt: 1_000 }],
 		};
 		const sourceSession = SessionManager.inMemory();
 		sourceSession.appendCustomEntry(WORKMAP_ENTRY_TYPE, snapshot);

@@ -1,8 +1,8 @@
 # pi-workmap
 
-![pi-workmap expanded runtime widget](docs/assets/workmap-session.png)
+![pi-workmap runtime widget](docs/assets/workmap-session.png)
 
-`pi-workmap` 是一个由 LLM Agent 主动维护的 Pi extension。它把 Agent 当前的目标、理解、未知、决策、行动与已检测到的方向偏差提炼成一张常驻 workmap，让你随时扫读 Agent 的方向；发现偏差时在对话中直接纠正，Agent 会同时更新 workmap 和后续行动。
+`pi-workmap` is a Pi extension maintained proactively by the LLM Agent. It distills the Agent's current goal, understandings, decisions, actions, and detected drift into a persistent workmap you can scan at any time; when something looks off, correct it in conversation and the Agent updates both the map and its course.
 
 ## Installation
 
@@ -14,17 +14,13 @@ pi install .
 
 ## Usage
 
-Agent 会在 working model 发生实质变化时主动调用 `workmap` tool；存在节点后，widget 会常驻 editor 上方。
+The Agent calls the `workmap` tool whenever its working model materially changes; once the map has content, a full workmap of at most 10 signals stays pinned above the editor — what you see is everything the Agent has declared. When the map fills up, the oldest subtree automatically gives way to newer information; updates never fail with a capacity error.
 
-![pi-workmap compact runtime widget](docs/assets/workmap-session-compact.png)
-
-按 Pi 官方的 `Ctrl+O`（`app.tools.expand`）同时切换 tool output 与 workmap 的 compact / expanded 状态。compact 以 cluster 为单位采样高价值信号（Heading、Drift、Decision 优先，Option 缩进跟随其 Decision）；expanded 显示完整树与 note。
-
-随包附带的 `/workmap-tidy` prompt template 可让 Agent 对照最新方向与进展整理 workmap：刷新 heading、移除失效信号、了结已解决的 drift 与 decision。
+The bundled `/workmap-tidy` prompt template asks the Agent to reconcile the workmap against the latest direction and progress: refresh the heading, drop stale signals, and close out resolved drift and decisions.
 
 ## Session behavior
 
-- 同一个 session 文件中的所有 `/tree` 分支共享最新 workmap，切换 branch 不会回滚它。
-- `resume` 恢复该 session 的最新 workmap。
-- `fork` 继承当下 workmap，之后与 parent session 独立演化。
-- `new session` 从空 workmap 开始。
+- Every `/tree` branch in the same session file shares the latest workmap; switching branches never rolls it back.
+- `resume` restores the session's latest workmap.
+- `fork` inherits the current workmap, then evolves independently from the parent session.
+- A `new session` starts with an empty workmap.

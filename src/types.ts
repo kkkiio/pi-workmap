@@ -7,7 +7,6 @@ export interface WorkmapChild {
 	type: WorkmapNodeType;
 	title: string;
 	status?: string;
-	note?: string;
 	children?: WorkmapChild[];
 }
 
@@ -16,16 +15,27 @@ export interface WorkmapRoot extends WorkmapChild {
 	id: string;
 }
 
+/** A root as persisted: tree age is tracked by the last upsert (ADR 0013). */
+export interface WorkmapSnapshotNode extends WorkmapRoot {
+	updatedAt?: number;
+}
+
 export interface WorkmapSnapshot {
-	version: 2;
-	nodes: WorkmapRoot[];
+	version: 3;
+	nodes: WorkmapSnapshotNode[];
+}
+
+export interface EvictedRoot {
+	id: string;
+	title: string;
 }
 
 export interface WorkmapToolDetails {
-	version: 2;
+	version: 3;
 	action: "view" | "update" | "clear";
 	changed: boolean;
 	error?: string;
+	evicted?: EvictedRoot[];
 	nodes: WorkmapRoot[];
 }
 

@@ -1,22 +1,44 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`WorkmapWidget > renders compact mode (snapshot) 1`] = `
-"Workmap · 6 signals · 1 drift                                          compact
-✦  Keep human and Agent aligned                                      long-term
-⎇  Implementation is becoming a todo manager                          detected
-◆  Use session-global snapshots                                         chosen
-└─ ◎  Render the persistent widget                                      active
-◆  How many compact rows remain readable?                          considering
-  … 1 more · 1 understanding"
+exports[`WorkmapWidget > drops statuses before squeezing titles on narrow widths (snapshot) 1`] = `
+"Workmap · 6 signals ·[0m...[0m
+✦  Keep human and Age[0m...[0m
+◆  Use session-global[0m...[0m
+└─ ◎  Render the pers[0m...[0m
+•  Tree navigation mu[0m...[0m
+⎇  Implementation is [0m...[0m
+◆  Which statuses sta[0m...[0m"
 `;
 
-exports[`WorkmapWidget > renders the glyph language and full tree (snapshot) 1`] = `
-"Workmap · 6 signals · 1 drift                                         expanded
+exports[`WorkmapWidget > keeps statuses right-aligned when there is room (snapshot) 1`] = `
+"Workmap · 6 signals · 1 drift
+✦  Keep human and Agent aligned                    long-term
+◆  Use session-global snapshots                       chosen
+└─ ◎  Render the persistent widget                    active
+•  Tree navigation must not roll back the map
+⎇  Implementation is becoming a todo manager        detected
+◆  Which statuses stay readable on narrow te[0m...[0m  considering"
+`;
+
+exports[`WorkmapWidget > renders past the former compact budget without hidden counts (snapshot) 1`] = `
+"Workmap · 9 signals · 1 drift
 ✦  Keep human and Agent aligned                                      long-term
 ◆  Use session-global snapshots                                         chosen
 └─ ◎  Render the persistent widget                                      active
-      The widget stays above the editor and follows Pi's expansion state.
 •  Tree navigation must not roll back the map
 ⎇  Implementation is becoming a todo manager                          detected
-◆  How many compact rows remain readable?                          considering"
+◆  Which statuses stay readable on narrow terminals?               considering
+◎  Extra task one
+◎  Extra task two
+◎  Extra task three"
+`;
+
+exports[`WorkmapWidget > renders the full tree at standard width (snapshot) 1`] = `
+"Workmap · 6 signals · 1 drift
+✦  Keep human and Agent aligned                                      long-term
+◆  Use session-global snapshots                                         chosen
+└─ ◎  Render the persistent widget                                      active
+•  Tree navigation must not roll back the map
+⎇  Implementation is becoming a todo manager                          detected
+◆  Which statuses stay readable on narrow terminals?               considering"
 `;

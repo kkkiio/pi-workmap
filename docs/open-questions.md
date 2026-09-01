@@ -8,9 +8,9 @@
 
 什么变化足以触发一次更新？如果过于频繁，tool 调用和 UI 会变成噪声；如果过少，map 会落后于实际方向。需要用真实长 session 观察 stale node、漏报 Decision 与延迟移除的频率。
 
-### Compact line budget
+### Capacity and eviction behavior
 
-当前 compact 以 cluster 为单位采样，最多五行、每簇最多三行。需要验证不同终端高度下，行预算与簇预算哪个更合适，以及多个平级 Heading 是否会挤掉关键信号。
+上限 10 与两档 LRU 驱逐（ADR 0013）是基于推理而非实测的选择。需要验证：驱逐是否频繁到打断工作（若是，上调上限还是收紧写图纪律）；被驱逐的树是否常被模型原样重发（复活风险）；以及活信号保护是否真的留住了开放问句与 blocked 面包屑。
 
 ### Free-form status vocabulary
 
