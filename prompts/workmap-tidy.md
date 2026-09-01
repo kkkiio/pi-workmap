@@ -8,7 +8,7 @@ description: 整理 workmap——对照最新方向与进展刷新 heading、清
 2. 重新审视 heading：它是否仍是用户此刻想要的？方向已变就更新；不要保留过期的锚点。
 3. 清理已完成或失效的信号：
    - 已完成的 task：若不再影响当前方向，直接移除；workmap 不是完成档案。
-   - 已解决的 drift：若用户已认可当前方向，把沉淀的结论记录为 decision 或 understanding 后移除 drift。
+   - 已解决的 drift：mismatch 通过纠正或受影响工作完成而解决后即可移除；若用户认可了当前方向，先把沉淀的结论记录为 decision 或 understanding 再移除。
    - 已敲定的 decision：在标题附上结论（"问题 → 结论"），移除落选的 option。
 4. 校准 understanding：已证实的 hypothesis 去掉假设标记；被证伪或不再相关的移除。
 5. 合并冗余、拆掉不再反映当前态势的树；workmap 是共享态势感知，不是历史记录。
