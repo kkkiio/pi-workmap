@@ -20,6 +20,8 @@ Agent 会在 working model 发生实质变化时主动调用 `workmap` tool；�
 
 按 Pi 官方的 `Ctrl+O`（`app.tools.expand`）同时切换 tool output 与 workmap 的 compact / expanded 状态。compact 以 cluster 为单位采样高价值信号（Heading、Drift、Decision 优先，Option 缩进跟随其 Decision）；expanded 显示完整树与 note。
 
+随包附带的 `/workmap-tidy` prompt template 可让 Agent 对照最新方向与进展整理 workmap：刷新 heading、移除失效信号、了结已解决的 drift 与 decision。
+
 ## Session behavior
 
 - 同一个 session 文件中的所有 `/tree` 分支共享最新 workmap，切换 branch 不会回滚它。
