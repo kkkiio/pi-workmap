@@ -72,9 +72,11 @@ Skip the check suite for Markdown-only changes unless links, screenshots, or gen
 When changing widget rendering or the README scenario, regenerate the real Pi TUI screenshots. The default path captures ANSI from a real Pi process in `tmux` and renders it with Charmbracelet Freeze:
 
 ```bash
-brew install tmux charmbracelet/tap/freeze
+brew install tmux charmbracelet/tap/freeze librsvg
 npm run docs:screenshot
 ```
+
+Freeze needs `rsvg-convert` for system-font fallback (otherwise glyphs missing from its embedded JetBrains Mono render as tofu), and JetBrains Mono must be registered with the OS via Font Book — on recent macOS the cask copies files without registering them.
 
 Capture details and pinned visual settings live in `test/visual/README.md` and `test/visual/freeze.json`.
 

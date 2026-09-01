@@ -10,11 +10,15 @@ Pi TUI → tmux capture-pane -p -e → Freeze → docs/assets/*.png
 
 ## Generate screenshots
 
-Install the two external tools first. On macOS:
+Install the external tools first. On macOS:
 
 ```bash
-brew install tmux charmbracelet/tap/freeze
+brew install tmux charmbracelet/tap/freeze librsvg
 ```
+
+`librsvg` provides `rsvg-convert`, which Freeze uses as its PNG backend; without it Freeze falls back to its embedded font database that resolves no system fonts, and glyphs missing from embedded JetBrains Mono (for example the drift glyph `⎇`) render as tofu.
+
+`rsvg-convert` resolves fonts through CoreText, so JetBrains Mono must be **registered with the OS**, not merely present in `~/Library/Fonts`: on recent macOS, `brew install --cask font-jetbrains-mono` copies the files but does not register them (Font Book shows nothing and pango falls back to a proportional font). Open one of the files in Font Book and install it once; verify with `ghostty +show-face --cp=0x21A6` reporting `JetBrains Mono`.
 
 Then regenerate both compact and expanded screenshots:
 
