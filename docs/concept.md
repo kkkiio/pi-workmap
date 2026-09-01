@@ -76,5 +76,5 @@ workmap = restrained agent transparency + visible correction surface
 - **Agent-maintained**：Agent 在 mental model 实质变化时主动更新。
 - **Human-readable**：优化一眼扫读，而不是完整表达所有机器关系。
 - **Correctable**：用户通过对话纠正；Agent 随后更新 map 和行动。
-- **Restrained**：compact 只显示高价值 signals，颜色也只承担明确含义。
+- **Restrained**：widget 只渲染单棵完整树，颜色只承担明确含义。
 - **Declared, not hidden**：展示 Agent 愿意据此行动的 working model，不捕获隐藏推理。

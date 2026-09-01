@@ -2,9 +2,10 @@ import { type ExtensionAPI, SessionManager } from "@earendil-works/pi-coding-age
 import { Text } from "@earendil-works/pi-tui";
 import { type TSchema, Type } from "typebox";
 import { renderStateMessage, renderTreeLines } from "./context-message.js";
-import { MAX_WORKMAP_DEPTH, WorkmapState } from "./state.js";
+import { MAX_WORKMAP_DEPTH, MAX_WORKMAP_NODES, WorkmapState } from "./state.js";
 import {
 	countNodes,
+	type EvictedRoot,
 	WORKMAP_NODE_TYPES,
 	type WorkmapChild,
 	type WorkmapRoot,
@@ -19,9 +20,6 @@ const signalFields = (children?: TSchema) => ({
 	type: NodeTypeSchema,
 	title: Type.String({ description: "One scannable sentence", minLength: 1, maxLength: 120 }),
 	status: Type.Optional(Type.String({ description: "Optional restrained right-side label", maxLength: 24 })),
-	note: Type.Optional(
-		Type.String({ description: "Optional one- or two-sentence supporting explanation", maxLength: 280 }),
-	),
 	...(children
 		? {
 				children: Type.Optional(
@@ -54,10 +52,12 @@ const WorkmapParams = Type.Object(
 		nodes: Type.Optional(
 			Type.Array(RootSchema, {
 				description: "Complete trees to add or replace by root id. Upserting a root replaces its ENTIRE subtree",
-				maxItems: 32,
+				maxItems: MAX_WORKMAP_NODES,
 			}),
 		),
-		remove: Type.Optional(Type.Array(Type.String(), { description: "Root ids whose trees to remove", maxItems: 32 })),
+		remove: Type.Optional(
+			Type.Array(Type.String(), { description: "Root ids whose trees to remove", maxItems: MAX_WORKMAP_NODES }),
+		),
 	},
 	{ additionalProperties: false },
 );
@@ -129,13 +129,12 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		promptSnippet:
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
-			"Proactively update the workmap as your heading, understanding, decisions, tasks, or detected drift change; do not wait for the user to ask. You MUST have a heading before your first investigation or action after a user prompt — declare it at low confidence if needed, and keep updating mid-loop as you learn; an update saved for the final reply is a postmortem, not a workmap.",
-			"Treat workmap as current shared situation awareness, not a history, todo log, project memory, or chain-of-thought. Remove nodes that no longer affect the current direction.",
-			"Use heading to report your current course: your best present reading of what the user wants. Reporting a heading is telemetry, not testimony — a corrected heading is a success event, not an error, so declare it early even at low confidence. Re-examine it at every phase shift and after every user correction: update it when your understanding changed, even if the user's words did not. Heading names the destination, never the route; routes are decisions. Status may be current or long-term.",
-			"Use understanding for current facts/models/hypotheses (mark any unverified premise explicitly as hypothesis rather than stating it as fact), decision for deliberation or commitments (title it as a question while deliberating, and once decided append the conclusion to the title, e.g. 'Where should X live? → on the server', keeping the question for context), option only for considered decision alternatives, task for current action (tasks may nest to express grouping, but keep nesting shallow and never model execution tracking such as dependencies or progress rollups), and drift only for a detected mismatch with user intent or the declared map. Keep a drift while the user has not responded; remove it once the mismatch resolves through correction or completion of the affected work, and when the user accepts the current direction, record any lasting conclusion as a decision or understanding before removing the drift.",
-			"Investigate factual questions directly instead of recording them on the map. When only the user can answer, ask in conversation; when a pending answer blocks a decision, keep that decision at status considering with the open question in its note.",
-			"Roots carry stable semantic snake_case ids; children carry no ids — updates and removals address whole trees by root id, and upserting a root replaces its entire subtree, so always resend the children you intend to keep. Use concise titles, optional short free-form status labels, and note only when one or two sentences materially improve alignment. Nest only when the information reads more clearly as a tree.",
-			"Prefer restrained conventional status labels such as current, long-term, open, investigating, considering, chosen, active, blocked, or done. Record blocked work as a task status with the reason in note or as its own decision node, and when work cannot proceed without the user, stop and ask in conversation instead of only marking the map.",
+			"You MUST have a heading before your first action after a user prompt — your best present reading of what the user wants, declared even at low confidence, because a corrected heading is a reward. Re-examine it at every phase shift and after every user correction: update it when your understanding changed, even if the user's words did not. A heading names the destination, never the route; routes are decisions. A heading takes status current or long-term.",
+			"Use drift for a detected mismatch with the declared plan. Remove it once the mismatch resolves through correction or completion of the affected work, recording any lasting conclusion as a decision or understanding first.",
+			"Use decision for deliberation or commitments (title it as a question while deliberating, and once decided append the conclusion to the title, e.g. 'Where should X live? → on the server', keeping the question for context; status considering while open, chosen once settled), option only for considered decision alternatives.",
+			"Use understanding for current facts/models/hypotheses (status hypothesis marks an unverified premise).",
+			"Use task for current action (status active, done, or blocked; blocked means work cannot proceed without the user — stop and ask in conversation instead of only marking the map).",
+			"You SHOULD update signals mid-loop as you learn; an update saved for the final reply is a postmortem, not a workmap.",
 		],
 		parameters: WorkmapParams,
 		executionMode: "sequential",
@@ -144,13 +143,18 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			turnsSinceUpdate = 0;
 			let changed = false;
 			let error: string | undefined;
+			let evicted: EvictedRoot[] = [];
 			if (params.action === "clear") {
 				changed = state.clear();
 			} else if (params.action === "update") {
 				if ((!params.nodes || params.nodes.length === 0) && (!params.remove || params.remove.length === 0)) {
 					error = "update requires at least one tree or remove id";
 				} else {
-					({ changed, error } = state.update((params.nodes ?? []) as WorkmapRoot[], params.remove ?? []));
+					({
+						changed,
+						error,
+						evicted = [],
+					} = state.update((params.nodes ?? []) as WorkmapRoot[], params.remove ?? [], Date.now()));
 				}
 			}
 			if (changed) state.persist(pi);
@@ -158,7 +162,8 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			const current = state.list();
 			const total = countNodes(current);
 			// Echo the resulting tree: the model must see the structure it just declared,
-			// so an unintended flattening or a dropped subtree is visible next turn.
+			// so an unintended flattening, a dropped subtree, or a capacity eviction is
+			// visible next turn.
 			const treeText = renderTreeLines(current).join("\n");
 			const text = error
 				? `Workmap update rejected: ${error}`
@@ -168,13 +173,17 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 						: "Workmap is empty"
 					: [
 							`${changed ? "Updated" : "No change to"} workmap · ${total} signal${total === 1 ? "" : "s"}`,
+							...(evicted.length > 0
+								? [`Evicted over capacity: ${evicted.map((node) => `${node.id} (${node.title})`).join(", ")}`]
+								: []),
 							...(current.length > 0 ? [treeText] : []),
 						].join("\n");
 			const details: WorkmapToolDetails = {
-				version: 2,
+				version: 3,
 				action: params.action,
 				nodes: current,
 				changed,
+				...(evicted.length > 0 ? { evicted } : {}),
 				...(error ? { error } : {}),
 			};
 			return { content: [{ type: "text", text }], details, isError: Boolean(error) };

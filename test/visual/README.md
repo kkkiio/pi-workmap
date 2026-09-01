@@ -20,7 +20,7 @@ brew install tmux charmbracelet/tap/freeze librsvg
 
 `rsvg-convert` resolves fonts through CoreText, so JetBrains Mono must be **registered with the OS**, not merely present in `~/Library/Fonts`: on recent macOS, `brew install --cask font-jetbrains-mono` copies the files but does not register them (Font Book shows nothing and pango falls back to a proportional font). Open one of the files in Font Book and install it once; verify with `ghostty +show-face --cp=0x21A6` reporting `JetBrains Mono`.
 
-Then regenerate both compact and expanded screenshots:
+Then regenerate the runtime screenshot:
 
 ```bash
 npm run docs:screenshot
