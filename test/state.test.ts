@@ -118,6 +118,23 @@ describe("WorkmapState", () => {
 		expect(state.list().map((node) => node.id)).toContain("open");
 	});
 
+	it("refreshes age on byte-identical re-assertion, not just on content changes", () => {
+		const state = new WorkmapState();
+		state.update([tree("a", 0), tree("b", 0)], [], 1_000);
+		// Identical content: the update is a no-op visually, but `a`'s age refreshes.
+		state.update([tree("a", 0)], [], 2_000);
+		state.update(
+			Array.from({ length: 7 }, (_, index) => tree(`f${index}`, 0)),
+			[],
+			3_000,
+		);
+		expect(state.update([tree("extra", 0)], [], 4_000).evicted).toBeUndefined();
+
+		const result = state.update([tree("extra2", 0)], [], 5_000);
+		expect(result.evicted).toEqual([{ id: "b", title: "Tree b" }]);
+		expect(state.list().map((node) => node.id)).toContain("a");
+	});
+
 	it("falls back to evicting live-signal trees when nothing else remains", () => {
 		const state = new WorkmapState();
 		state.update(
@@ -186,6 +203,33 @@ describe("WorkmapState", () => {
 		state.restore(sessionWith(entries));
 
 		expect(state.list()).toEqual(latestSnapshot.nodes.map(({ updatedAt: _ignored, ...root }) => root));
+	});
+
+	it("evicts oversized snapshots down to capacity on restore", () => {
+		const nodes = Array.from({ length: MAX_WORKMAP_NODES + 2 }, (_, index) => ({
+			id: `root${index}`,
+			type: "task" as const,
+			title: `Tree ${index}`,
+			updatedAt: 1_000 + index,
+		}));
+		const entries = [
+			{
+				type: "custom",
+				id: "entry-0",
+				parentId: null,
+				timestamp: new Date(0).toISOString(),
+				customType: WORKMAP_ENTRY_TYPE,
+				data: { version: 3, nodes } as WorkmapSnapshot,
+			} as SessionEntry,
+		];
+		const state = new WorkmapState();
+
+		state.restore(sessionWith(entries));
+
+		const ids = state.list().map((node) => node.id);
+		expect(ids).toHaveLength(MAX_WORKMAP_NODES);
+		expect(ids).not.toContain("root0");
+		expect(ids).not.toContain("root1");
 	});
 
 	it("skips legacy snapshots: workmap state is ephemeral by design", () => {

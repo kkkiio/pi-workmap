@@ -65,6 +65,10 @@ export class WorkmapState {
 				const stored = storedNodes[position]?.updatedAt;
 				return { root, updatedAt: typeof stored === "number" ? stored : now };
 			});
+			// Restore bypasses update-time eviction, so enforce the cap here too:
+			// externally produced or edited snapshots must not exceed the widget's
+			// height contract (evicted trees are dropped silently).
+			this.entries = evictToCapacity(this.entries, MAX_WORKMAP_NODES).kept;
 			return;
 		}
 		this.entries = [];
@@ -122,23 +126,21 @@ export class WorkmapState {
 		next = next.map((entry, index) => ({ ...entry, root: validated[index] as WorkmapRoot }));
 
 		let total = countNodes(validated);
-		const evicted: EvictedRoot[] = [];
+		let evicted: EvictedRoot[] = [];
 		if (total > MAX_WORKMAP_NODES) {
-			// Trees upserted in this call are the caller's freshest declarations and are
-			// never eviction candidates. Arrays preserve position order, so the stable
-			// sort below turns equal updatedAt values into position-order tiebreaks.
+			// Trees upserted in this call are the caller's freshest declarations and
+			// are never eviction candidates.
 			const fresh = new Set(upserts.map((node) => node.id.trim()));
-			const candidates = next.filter((entry) => !fresh.has(entry.root.id));
-			const byAge = (left: StoredEntry, right: StoredEntry): number => left.updatedAt - right.updatedAt;
-			const evictOrder = [
-				...candidates.filter((entry) => !hasLiveSignal(entry.root)).sort(byAge),
-				...candidates.filter((entry) => hasLiveSignal(entry.root)).sort(byAge),
-			];
-			for (const entry of evictOrder) {
-				if (total <= MAX_WORKMAP_NODES) break;
-				total -= countNodes([entry.root]);
-				evicted.push({ id: entry.root.id, title: entry.root.title });
-				next = next.filter((candidate) => candidate !== entry);
+			const freshNodes = countNodes(next.filter((entry) => fresh.has(entry.root.id)).map((entry) => entry.root));
+			const outcome = evictToCapacity(
+				next.filter((entry) => !fresh.has(entry.root.id)),
+				MAX_WORKMAP_NODES - freshNodes,
+			);
+			evicted = outcome.evicted;
+			if (evicted.length > 0) {
+				const evictedIds = new Set(evicted.map((node) => node.id));
+				next = next.filter((entry) => !evictedIds.has(entry.root.id));
+				total = countNodes(next.map((entry) => entry.root));
 			}
 			if (total > MAX_WORKMAP_NODES) {
 				return {
@@ -148,8 +150,10 @@ export class WorkmapState {
 			}
 		}
 
-		const changed =
-			JSON.stringify(next.map((entry) => entry.root)) !== JSON.stringify(this.entries.map((entry) => entry.root));
+		// Compare stored entries, not just displayed content: a byte-identical
+		// re-upsert still refreshes the tree's age (ADR 0013), and that age-only
+		// change must be assigned and persisted.
+		const changed = JSON.stringify(next) !== JSON.stringify(this.entries);
 		if (changed) this.entries = next;
 		return { changed, ...(evicted.length > 0 ? { evicted } : {}) };
 	}
@@ -170,6 +174,29 @@ export class WorkmapState {
 		}
 		return roots;
 	}
+}
+
+/**
+ * Evict whole trees oldest-first until the map fits the capacity: trees whose
+ * subtree carries no live signal go first, live-signal trees last (ADR 0013).
+ */
+function evictToCapacity(entries: StoredEntry[], capacity: number): { kept: StoredEntry[]; evicted: EvictedRoot[] } {
+	let total = countNodes(entries.map((entry) => entry.root));
+	const evicted: EvictedRoot[] = [];
+	if (total <= capacity) return { kept: entries, evicted };
+	// Stable sorts turn equal updatedAt values into position-order tiebreaks.
+	const byAge = (left: StoredEntry, right: StoredEntry): number => left.updatedAt - right.updatedAt;
+	const order = [
+		...entries.filter((entry) => !hasLiveSignal(entry.root)).sort(byAge),
+		...entries.filter((entry) => hasLiveSignal(entry.root)).sort(byAge),
+	];
+	for (const entry of order) {
+		if (total <= capacity) break;
+		total -= countNodes([entry.root]);
+		evicted.push({ id: entry.root.id, title: entry.root.title });
+	}
+	const evictedIds = new Set(evicted.map((node) => node.id));
+	return { kept: entries.filter((entry) => !evictedIds.has(entry.root.id)), evicted };
 }
 
 function validateNode(node: Partial<WorkmapChild>): string | undefined {
