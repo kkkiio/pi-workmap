@@ -15,7 +15,7 @@ widget 的对齐机制建立在"每个 glyph 单元占满两个终端列"的算�
 
 glyph 的选用规则：**候选字形必须在实际运行环境（ghostty 直跑、tmux 套 ghostty）中用 DSR 实测格子宽度，与 pi-tui 的 `visibleWidth` 一致才可采用**。Narrow/Wide 字形天然满足；Ambiguous 字形不凭 Unicode 表或 `visibleWidth` 单方推断。
 
-当前清单的实测结论：`◎ • ◆ ◇ □ ⎇` 为 1 格，`glyphCell` 补 1 空格凑满 2 列；`⎇` 作为 drift glyph 保留（分支语义贴切，备选 `⑂` U+2442、`⅄` U+2144 同为 1 格）。
+当前清单的实测结论：`✦ ◎ • ◆ ◇ ⎇` 为 1 格，`glyphCell` 补 1 空格凑满 2 列；`⎇` 作为 drift glyph 保留（分支语义贴切，备选 `⑂` U+2442、`⅄` U+2144 同为 1 格）。
 
 ## Rationale
 

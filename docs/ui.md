@@ -7,15 +7,15 @@ Workmap 是 editor 上方的常驻 widget。它复用 Pi 官方 `app.tools.expan
 ## Visual language
 
 ```text
-◎  Heading
+✦  Heading
 •  Understanding
 ◆  Decision
 ◇  Option
-□  Task
+◎  Task
 ⎇ Drift
 ```
 
-用色遵循 Pi 和 `pi-tasks` 的克制方式：正文与普通 glyph 使用默认文字色；Goal / Decision glyph 使用 accent，Drift 使用 error；`status`、tree connector 与 `note` 使用 dim。灰色只表示辅助信息，不额外编码领域状态。
+用色遵循 Pi 和 `pi-tasks` 的克制方式：正文与普通 glyph 使用默认文字色；Heading / Decision glyph 使用 accent，Drift 使用 error；`status`、tree connector 与 `note` 使用 dim。灰色只表示辅助信息，不额外编码领域状态。
 
 颜色表达的是"晚看的代价"而非严重程度：Drift 是唯一成本随延迟增长的信号——用户没看到的每一分钟，Agent 都可能带着偏差继续干活——所以它用最抢眼的 error 色；accent 用于定位方向（Heading / Decision）。Drift 本身只是"提请确认"：用户可以纠正、接受，或等待相关工作自然完成。如果实践中 Drift 频繁出现，应先修 Agent 的过度报告，而不是调低颜色。
 
@@ -25,15 +25,15 @@ Workmap 是 editor 上方的常驻 widget。它复用 Pi 官方 `app.tools.expan
 
 ```text
 Workmap · 8 signals                                      ctrl+o compact
-◎ Fix flaky auth test                                         current
+✦ Fix flaky auth test                                         current
 ├─ • Failure only happens concurrently                        observed
 ├─ • Token cache is shared                                    observed
-├─ □ Check whether refresh can race                            active
+├─ ◎ Check whether refresh can race                            active
 ├─ ◆ Inspect refresh path first                               chosen
 │     Failure looks state-related.
-└─ □ Reproduce                                                done
-   ├─ □ Inspect refresh path                                  active
-   └─ □ Test hypothesis                                      queued
+└─ ◎ Reproduce                                                done
+   ├─ ◎ Inspect refresh path                                  active
+   └─ ◎ Test hypothesis                                      queued
 ```
 
 Heading 是可选的方向信号，不是强制容器。多个 Heading 可以平级，其他节点也可以作为 root。
@@ -42,7 +42,7 @@ Heading 是可选的方向信号，不是强制容器。多个 Heading 可以平
 
 ```text
 Workmap · 9 signals                                      ctrl+o compact
-◎ Stop users being randomly logged out                        current
+✦ Stop users being randomly logged out                        current
 • Access token expiry looks normal                             observed
 • Refresh requests occasionally overlap                       observed
 ◆ Should refresh serialization live on server or client?  considering
@@ -50,9 +50,9 @@ Workmap · 9 signals                                      ctrl+o compact
 │     Smaller server change, but assumes one client instance.
 ├─ ◇ Server idempotency
 │     More robust across workers, but a larger change.
-└─ □ Compare approaches                                       active
-□ Reproduce race                                               done
-□ Inspect refresh handler                                     active
+└─ ◎ Compare approaches                                       active
+◎ Reproduce race                                               done
+◎ Inspect refresh handler                                     active
 ```
 
 Decision 表示需要权衡或已承诺的选择：斟酌中时 title 可以写成疑问句，拍板后改写为结论。Option 只放在 Decision 下；待验证的猜测写成 `Understanding · hypothesis`。事实问题不设节点类型——能查的直接调查，只有用户能答的在对话中问。
@@ -63,8 +63,8 @@ Decision 表示需要权衡或已承诺的选择：斟酌中时 title 可以写�
 
 ```text
 Workmap · 9 signals · 1 drift                            ctrl+o expand
-◎ Keep users signed in reliably                               current
-◎ Keep authentication architecture simple                   long-term
+✦ Keep users signed in reliably                               current
+✦ Keep authentication architecture simple                   long-term
 ⎇ The client-only fix assumes a single worker              detected
 ◆ Where should refresh serialization live?               considering
 ├─ ◇ Serialize in the client                              candidate
@@ -77,11 +77,11 @@ compact 按 cluster 采样而不是按节点：子节点脱离 parent 会失去�
 
 ```text
 Workmap · 7 signals · 1 drift                            ctrl+o compact
-◎ Preserve existing client behavior                           current
+✦ Preserve existing client behavior                           current
 ⎇ Implementation started changing the public API            detected
    The user asked for an internal fix without API changes.
 ◆ Keep the public API stable                                  chosen
-□ Move serialization behind the existing refresh method       active
+◎ Move serialization behind the existing refresh method       active
 ```
 
 Drift 出现意味着 Agent 已识别真实不一致；它不是泛化的风险清单。偏差消解后应删除——无论消解来自用户纠正、用户接受（结论转为 Decision / Understanding），还是相关工作自然完成——而不是作为历史记录保留。用户未明确回应时 drift 应保留；沉默不等于接受。

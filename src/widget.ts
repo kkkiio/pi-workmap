@@ -14,11 +14,11 @@ export const PRESENTATION: Record<
 	WorkmapNodeType,
 	{ glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }
 > = {
-	heading: { glyph: "◎", glyphColor: "accent" },
+	heading: { glyph: "✦", glyphColor: "accent" },
 	understanding: { glyph: "•", glyphColor: "text" },
 	decision: { glyph: "◆", glyphColor: "accent" },
 	option: { glyph: "◇", glyphColor: "text" },
-	task: { glyph: "□", glyphColor: "text" },
+	task: { glyph: "◎", glyphColor: "text" },
 	drift: { glyph: "⎇", glyphColor: "error" },
 };
 const COMPACT_PRIORITY: Record<WorkmapNodeType, number> = {
