@@ -9,6 +9,8 @@
 ├── AGENTS.md                         # Repository-wide developer-agent rules
 ├── README.md                         # User-facing installation and usage
 ├── package.json                      # Pi package manifest and development commands
+├── prompts/
+│   └── workmap-tidy.md               # /workmap-tidy prompt template for workmap housekeeping
 ├── src/
 │   ├── index.ts                      # Extension lifecycle, tool, and state message injection
 │   ├── context-message.ts            # Persisted workmap-state message rendering
