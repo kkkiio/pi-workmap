@@ -1,0 +1,22 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`WorkmapWidget > renders compact mode (snapshot) 1`] = `
+"Workmap · 6 signals · 1 drift                                          compact
+✦  Keep human and Agent aligned                                      long-term
+⎇  Implementation is becoming a todo manager                          detected
+◆  Use session-global snapshots                                         chosen
+└─ ◎  Render the persistent widget                                      active
+◆  How many compact rows remain readable?                          considering
+  … 1 more · 1 understanding"
+`;
+
+exports[`WorkmapWidget > renders the glyph language and full tree (snapshot) 1`] = `
+"Workmap · 6 signals · 1 drift                                         expanded
+✦  Keep human and Agent aligned                                      long-term
+◆  Use session-global snapshots                                         chosen
+└─ ◎  Render the persistent widget                                      active
+      The widget stays above the editor and follows Pi's expansion state.
+•  Tree navigation must not roll back the map
+⎇  Implementation is becoming a todo manager                          detected
+◆  How many compact rows remain readable?                          considering"
+`;

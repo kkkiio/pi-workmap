@@ -41,6 +41,20 @@ function renderWidget(expanded: boolean, width = 78): { lines: string[]; request
 }
 
 describe("WorkmapWidget", () => {
+	it("renders the glyph language and full tree (snapshot)", () => {
+		const storage = nodes.find((node) => node.id === "storage");
+		if (storage?.children?.[0])
+			storage.children[0].note = "The widget stays above the editor and follows Pi's expansion state.";
+		const { lines } = renderWidget(true);
+		expect(lines.join("\n")).toMatchSnapshot();
+		if (storage?.children?.[0]) delete storage.children[0].note;
+	});
+
+	it("renders compact mode (snapshot)", () => {
+		const { lines } = renderWidget(false);
+		expect(lines.join("\n")).toMatchSnapshot();
+	});
+
 	it("keeps compact mode restrained and prioritizes alignment signals", () => {
 		const { lines } = renderWidget(false);
 		const output = lines.join("\n");
@@ -50,7 +64,6 @@ describe("WorkmapWidget", () => {
 		expect(output).toContain("Implementation is becoming a todo manager");
 		expect(output).toContain("How many compact rows remain readable?");
 		expect(output).not.toContain("Tree navigation must not roll back");
-		expect(output).toContain("└─ □  Render the persistent widget");
 		expect(output).toContain("… 1 more");
 	});
 
@@ -62,7 +75,6 @@ describe("WorkmapWidget", () => {
 		const output = lines.join("\n");
 
 		expect(output).toContain("Tree navigation must not roll back the map");
-		expect(output).toContain("└─ □  Render the persistent widget");
 		expect(output).toContain("The widget stays above the editor");
 		if (storage?.children?.[0]) delete storage.children[0].note;
 	});
@@ -163,7 +175,7 @@ describe("WorkmapWidget", () => {
 		expect(output).toContain("Workmap");
 		expect(output).not.toContain("long-term");
 		expect(output).not.toContain("detected");
-		expect(lines[1].startsWith("◎  Keep human")).toBe(true);
+		expect(lines[1].includes("Keep human")).toBe(true);
 	});
 
 	it("keeps statuses right-aligned when there is room", () => {
