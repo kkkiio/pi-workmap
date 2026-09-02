@@ -129,13 +129,12 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		promptSnippet:
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
-			"You MUST re-declare the complete map via the `workmap` tool before your first action after every user prompt — the map is fully rewritten, never patched.",
-			"Re-examine the heading on every rewrite, even when the user's words did not change — a corrected heading is a reward. A heading names the destination, never the route; routes are decisions. Heading statuses: current for where the user just pointed, long-term for the project-level direction this session's work serves.",
-			"You SHOULD add drift via `add_drift` the moment you change course or start working around a problem mid-task; leave the rest of the map to the next full rewrite.",
+			"You MUST re-declare the complete map via the `workmap` tool before your first action after every user prompt.",
+			"Rewrite the heading when your understanding changed, even if the user's words did not. A heading names the destination, never the route; routes are decisions. Status: current for where the user just pointed, long-term for the project-level direction this session serves.",
 			"Use decision for deliberation or commitments: title it as a question while deliberating, and once decided append the conclusion, e.g. 'Where should X live? → on the server', keeping the question for context; status considering while open, chosen once settled. Option only for considered alternatives under their decision.",
 			"Use understanding for current facts, syntheses, and hypotheses; status hypothesis marks an unverified premise. Counterintuitive findings belong here precisely because they are easy to lose.",
 			"Use task for actions you intend, are doing, or have done; status pending, active, or done. A done title records side effects — what changed, what ran.",
-			"Use drift only for a detected mismatch between your direction and the user's intent or the declared map — not general risks or blockers. Remove it once the mismatch resolves, recording any lasting conclusion as a decision or understanding first.",
+			"You SHOULD add drift via `add_drift` the moment you change course or start working around a problem mid-task — drift is only for a detected mismatch between your direction and the user's intent or the declared map, not general risks or blockers. Remove it once the mismatch resolves, recording any lasting conclusion as a decision or understanding first; leave the rest of the map to the next full rewrite.",
 		],
 		parameters: SetParams,
 		executionMode: "sequential",
