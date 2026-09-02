@@ -26,7 +26,7 @@ Workmap 是 editor 上方的常驻 widget，只有一种渲染：完整树。容
 ```text
 Workmap · 7 signals
 ✦ Restore trust in the auth layer                             long-term
-✦ Fix the flaky auth test                                     current
+✦ Fix the flaky auth test
 ├─ • Failure only happens concurrently                        observed
 ├─ • Token cache is shared                                    observed
 ├─ ◆ Inspect refresh path first                               chosen
@@ -41,7 +41,7 @@ Workmap · 7 signals
 ```text
 Workmap · 10 signals
 ✦ Keep the auth layer trustworthy                             long-term
-✦ Stop users being randomly logged out                        current
+✦ Stop users being randomly logged out
 • Access token expiry looks normal                             observed
 • Refresh requests occasionally overlap                       observed
 ◆ Should refresh serialization live on server or client?  considering
@@ -62,7 +62,7 @@ widget 没有折叠态：`MAX_WORKMAP_NODES = 10`（含 children 递归计数）
 
 ```text
 Workmap · 7 signals · 1 drift
-✦ Preserve existing client behavior                           current
+✦ Preserve existing client behavior
 ⎇ Implementation started changing the public API             detected
 ◆ Keep the public API stable                                  chosen
 ◎ Move serialization behind the existing refresh method       active
