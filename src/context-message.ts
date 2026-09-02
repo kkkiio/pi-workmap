@@ -2,9 +2,10 @@ import type { WorkmapChild, WorkmapRoot } from "./types.js";
 
 export interface StateMessageMeta {
 	/**
-	 * User prompts since the last workmap call (set or add_drift). The MUST in
-	 * prompt guidelines lowers forgetting but cannot eliminate it — this counter
-	 * makes forgetting visible to the model and escalates when it happens.
+	 * User prompts since the last accepted full `workmap` declaration —
+	 * add_drift appends but never re-anchors, so it does not reset this. The
+	 * MUST in prompt guidelines lowers forgetting but cannot eliminate it; this
+	 * counter makes a missed rewrite visible and escalates when it happens.
 	 */
 	promptsSinceRewrite: number;
 }
