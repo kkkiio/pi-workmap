@@ -78,7 +78,12 @@ export function migrateV4Nodes(nodes: WorkmapRoot[]): WorkmapRoot[] {
 	const remap = (node: WorkmapRoot): WorkmapRoot => ({
 		...node,
 		type: (node.type as string) === "heading" ? "goal" : node.type,
-		...(node.children ? { children: node.children.map(remap) } : {}),
+		// Migration runs before semantic validation: malformed children pass
+		// through untouched so validate() rejects the snapshot instead of this
+		// function crashing session start.
+		...(Array.isArray(node.children)
+			? { children: node.children.map((child) => (child && typeof child === "object" ? remap(child) : child)) }
+			: {}),
 	});
 	return nodes.map(remap);
 }
