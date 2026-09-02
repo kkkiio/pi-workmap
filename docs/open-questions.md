@@ -4,34 +4,26 @@
 
 ## 仍需通过使用验证
 
-### Agent maintenance reliability
+### Rewrite fidelity（重写保真）
 
-什么变化足以触发一次更新？如果过于频繁，tool 调用和 UI 会变成噪声；如果过少，map 会落后于实际方向。需要用真实长 session 观察 stale node、漏报 Decision 与延迟移除的频率。
+全量重写给了模型每轮静默丢信号的机会：改写中缩短 title、丢掉 child、或整棵丢弃仍然相关的树。需要观察：被丢的信号多久被用户或 tool 回显发现；重写质量是否随 session 变长衰减；重写是否沦为机械复读（内容长期不变也不重审 heading）。
 
-### Capacity and eviction behavior
+### Stale counter effectiveness
 
-上限 10 与两档 LRU 驱逐（ADR 0013）是基于推理而非实测的选择。需要验证：驱逐是否频繁到打断工作（若是，上调上限还是收紧写图纪律）；被驱逐的树是否常被模型原样重发（复活风险）；以及活信号保护是否真的留住了开放问句与 blocked 面包屑。
+注入 footer 的 prompt 计数与 ≥2 时的点名升级，是否真能把遗忘的重写拉回来？需要观察模型对重复出现的快照是否习惯化（计数增长仍不触发 set），以及升级文案触发后首个动作是否就是 workmap 调用。
 
-### Free-form status vocabulary
+### add_drift adoption
 
-自由 status 避免引入不必要状态机，但可能产生 `active / doing / in_progress` 等词汇漂移。先观察 Agent 实际用词，再决定是否只在 prompt 中推荐一组 vocabulary；不要过早把它做成 enum。
+add_drift 是否真的被用在设计场景——换方案或绕路的瞬间？还是被当作通用 mid-loop 更新（如果发生，观察追加内容的类型分布与质量），或干脆从不使用？空 map 与满容量拒绝的出现频率也是信号：频繁的满容量拒绝说明 10 节点对实际工作太紧。
 
 ### Drift discoverability
 
-Agent 是否能可靠识别自己与 user intent 的真实偏差，而不是只记录抽象风险？需要特别观察用户纠正后，Agent 是否及时新增、解释并清理 Drift。Drift 的参照是对话中声明的意图与现行 map，用户沉默不代表接受；需要观察的是：用户接受后，Agent 是否把结论转为 Decision 或 Understanding 再删除 drift，以及 drift 长期存在时 Agent 是否会主动在对话中确认方向。
-
-### Escalation reliability
-
-硬阻塞依赖 Agent 主动停下来在对话中提问（见 ADR 0003）。需要观察：Agent 遇到没有用户就无法继续的情况时，是停下问，还是只把 Task 标成 `blocked` 继续干别的；以及 blocked 面包屑是否真的指向对话中等待的那个问题。
-
-### ~~State anchor salience~~（已验证，见 ADR 0010）
-
-已观察到预期现象：一次调试会话中 Agent 首个 run 写入 workmap 后跨 3 个 user prompt、~70 次工具调用未更新，唯一的状态消息漂到上下文深处，用户被迫追问"你在干什么"。已按预案反转为每 run 重写并附加 staleness 计数（[ADR 0010](adr/0010-staleness-counter-reinjection.md)）。后续观察项转移为：模型是否对每 run 重复出现的快照产生习惯化（计数增长仍不触发更新）。
+Agent 能否可靠识别自己与 user intent 的真实偏差，而不是只记录抽象风险？用户纠正后，Agent 是否及时新增、解释并清理 drift；drift 的参照是对话中声明的意图与现行 map，用户沉默不代表接受；drift 长期存在时 Agent 是否会主动在对话中确认方向。
 
 ### Fork edge cases
 
-交互式 fork 会继承当前内存 snapshot。仍需验证从很早的 tree 节点 fork、从 CLI 直接 fork 与异常退出后的恢复是否都符合“继承当下状态”的用户预期。
+交互式 fork 会继承当前内存 snapshot。仍需验证从很早的 tree 节点 fork、从 CLI 直接 fork 与异常退出后的恢复是否都符合"继承当下状态"的用户预期。
 
 ### Success criteria
 
-产品是否有效不能只看 workmap 更新次数。更有意义的指标包括：用户发现错误方向所需时间、需要追问“你现在为什么这样做”的次数、长 session 中接管所需时间，以及 map 被用户纠正后 Agent 行为是否真正改变。
+产品是否有效不能只看 workmap 调用次数。更有意义的指标包括：用户发现错误方向所需时间、需要追问"你现在为什么这样做"的次数、长 session 中接管所需时间，以及 map 被用户纠正后 Agent 行为是否真正改变。

@@ -1,51 +1,27 @@
-export const WORKMAP_NODE_TYPES = ["heading", "understanding", "decision", "option", "task", "drift"] as const;
+import type { WorkmapNodeType } from "./node-types.js";
 
-export type WorkmapNodeType = (typeof WORKMAP_NODE_TYPES)[number];
-
-/** A nested signal. Children carry no id: trees are the only addressable unit. */
+/** A supporting signal nested under a root. Children are leaves: the map is two layers deep. */
 export interface WorkmapChild {
 	type: WorkmapNodeType;
 	title: string;
 	status?: string;
+}
+
+/** A root-level signal — the only layer allowed to carry children (ADR 0015). */
+export interface WorkmapRoot extends WorkmapChild {
 	children?: WorkmapChild[];
 }
 
-/** A top-level tree root — the only node with a stable, targetable id. */
-export interface WorkmapRoot extends WorkmapChild {
-	id: string;
-}
-
-/** A root as persisted: tree age is tracked by the last upsert (ADR 0013). */
-export interface WorkmapSnapshotNode extends WorkmapRoot {
-	updatedAt?: number;
-}
-
-export interface WorkmapSnapshot {
-	version: 3;
-	nodes: WorkmapSnapshotNode[];
-}
-
-export interface EvictedRoot {
-	id: string;
-	title: string;
-}
-
 export interface WorkmapToolDetails {
-	version: 3;
-	action: "view" | "update" | "clear";
+	version: 4;
+	action: "set" | "add";
 	changed: boolean;
 	error?: string;
-	evicted?: EvictedRoot[];
 	nodes: WorkmapRoot[];
 }
 
-export function countNodes(nodes: WorkmapChild[]): number {
-	let total = 0;
-	const stack = [...nodes];
-	while (stack.length > 0) {
-		const node = stack.pop() as WorkmapChild;
-		total += 1;
-		if (node.children) stack.push(...node.children);
-	}
+export function countNodes(roots: WorkmapRoot[]): number {
+	let total = roots.length;
+	for (const root of roots) total += root.children?.length ?? 0;
 	return total;
 }

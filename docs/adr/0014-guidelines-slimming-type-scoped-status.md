@@ -1,6 +1,6 @@
 # ADR 0014: guidelines 瘦身与 status 按类型归位
 
-- Status: Accepted（修订 [ADR 0011](0011-nested-children-root-ids.md) 的 MUST 措辞依据）
+- Status: Superseded by [ADR 0015](0015-full-rewrite-set-add-drift-two-layer.md)（guidelines 随全量重写重构；status 按类型归位的原词典为 node-types.ts 承接）
 - Date: 2026-09-01
 
 ## Context

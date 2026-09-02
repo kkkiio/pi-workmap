@@ -1,6 +1,6 @@
 # ADR 0003: 不设 Blocker 节点，阻塞用 Task status 与对话表达
 
-- Status: Accepted
+- Status: Accepted（Task · blocked 面包屑通道已被 [ADR 0015](0015-full-rewrite-set-add-drift-two-layer.md) 删除；"硬阻塞走对话"原则保留并加强）
 - Date: 2026-08-30
 
 ## Context

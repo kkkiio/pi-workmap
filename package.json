@@ -38,9 +38,6 @@
   "pi": {
     "extensions": [
       "./src/index.ts"
-    ],
-    "prompts": [
-      "./prompts/workmap-tidy.md"
     ]
   }
 }

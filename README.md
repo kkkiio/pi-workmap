@@ -2,7 +2,9 @@
 
 ![pi-workmap runtime widget](docs/assets/workmap-session.png)
 
-`pi-workmap` is a Pi extension maintained proactively by the LLM Agent. It distills the Agent's current goal, understandings, decisions, actions, and detected drift into a persistent workmap you can scan at any time; when something looks off, correct it in conversation and the Agent updates both the map and its course.
+> **See what your agent intends before it acts — and why.**
+
+`pi-workmap` is a Pi extension maintained proactively by the LLM Agent. It distills the Agent's current direction, understandings, decisions, actions, and detected drift into a persistent workmap you can scan at any time; when something looks off, correct it in conversation and the Agent updates both the map and its course.
 
 ## Installation
 
@@ -14,9 +16,24 @@ pi install .
 
 ## Usage
 
-The Agent calls the `workmap` tool whenever its working model materially changes; once the map has content, a full workmap of at most 10 signals stays pinned above the editor — what you see is everything the Agent has declared. When the map fills up, the oldest subtree automatically gives way to newer information; updates never fail with a capacity error.
+Once the Agent starts working, a workmap stays pinned above the editor:
 
-The bundled `/workmap-tidy` prompt template asks the Agent to reconcile the workmap against the latest direction and progress: refresh the heading, drop stale signals, and close out resolved drift and decisions.
+```text
+Workmap · 9 signals
+✦ Keep the auth layer trustworthy                             long-term
+✦ Fix the flaky auth test
+• Refresh requests occasionally overlap                       observed
+◆ Where should refresh serialization live?                considering
+├─ ◇ Serialize in the client                                  candidate
+├─ ◇ Make refresh idempotent on the server
+└─ ◎ Compare approaches                                       active
+◎ Reproduce the double logout (rewrote 2 fixtures)             done
+⎇ The client-only fix assumes a single worker                  detected
+```
+
+- Every prompt, before acting, the Agent re-declares this complete map; a mid-task course change is appended on the spot via `add_drift`.
+- Something looks off? Say so in conversation — the Agent updates the map and its course.
+- Hard limits, enforced by rejection: at most 10 signals, every map anchored by at least one heading.
 
 ## Session behavior
 

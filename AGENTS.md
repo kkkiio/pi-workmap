@@ -9,10 +9,10 @@
 ├── AGENTS.md                         # Repository-wide developer-agent rules
 ├── README.md                         # User-facing installation and usage
 ├── package.json                      # Pi package manifest and development commands
-├── prompts/
-│   └── workmap-tidy.md               # /workmap-tidy prompt template for workmap housekeeping
 ├── src/
-│   ├── index.ts                      # Extension lifecycle, tool, and state message injection
+│   ├── index.ts                      # Extension lifecycle, tools, and state message injection
+│   ├── node-types.ts                 # Node type semantics, per-type status vocabulary, invariants
+│   ├── session-entry.ts              # Snapshot wire format and session-file persistence
 │   ├── context-message.ts            # Persisted workmap-state message rendering
 │   ├── state.ts                      # Validated session-global snapshots
 │   ├── types.ts                      # Public workmap data types
@@ -24,7 +24,11 @@
 └── docs/
     ├── adr/                          # Architecture decision records
     ├── assets/                       # README runtime screenshot (single full-tree view)
-    └── *.md                          # Product concepts, boundaries, UI, and references
+    ├── concept.md                    # Core problem, selection principle, design principles
+    ├── product-boundary.md           # Session working state vs durable knowledge; non-goals
+    ├── ui.md                         # Widget visual language, examples, and layout rules
+    ├── open-questions.md             # Hypotheses still awaiting validation through real use
+    └── research.md                   # Related work and literature
 ```
 
 Keep session semantics in `src/state.ts`, presentation in `src/widget.ts`, and Pi integration in `src/index.ts`. Do not add another storage or UI layer for behavior already owned by those modules.
@@ -39,12 +43,20 @@ Keep session semantics in `src/state.ts`, presentation in `src/widget.ts`, and P
 - **Understanding** — A fact, synthesis, inference, or hypothesis the Agent currently uses. Mark unverified premises explicitly as `hypothesis` rather than stating them as fact.
 - **Decision** — A choice being deliberated or a commitment already made. Title it as a question while deliberating; once decided, append the conclusion to the title ("…? → conclusion") rather than rewriting it.
 - **Option** — A considered alternative for a Decision. A tentative answer to an open question is an Understanding with status `hypothesis`, not an Option.
-- **Task** — A current action implied by the working model, not the organizing center of the product. Tasks may nest for grouping; nesting expresses information structure only, never execution tracking (dependencies, progress rollups, or completion archives). Factual questions get no node type: investigate directly, or ask the user in conversation when only they can answer.
+- **Task** — An action the Agent declares it intends, is doing, or has done; a `done` title records side effects (what changed, what ran), serving as the map's recent behavior ledger. One level of children expresses supporting structure only, never execution tracking (dependencies, progress rollups, or completion archives). Factual questions get no node type: investigate directly, or ask the user in conversation when only they can answer.
 - **Drift** — A detected mismatch between the Agent's direction and user intent or the declared workmap.
 
-Status labels are type-scoped and documented in the tool's prompt guidelines (heading: current/long-term; decision: considering/chosen; understanding: hypothesis; task: active/done/blocked). The map is capped at 10 nodes; overflow evicts whole trees oldest-first (live-signal trees last) and reports the eviction in the tool result (ADR 0013).
+Status labels are type-scoped; the recommended vocabulary per type lives in `src/node-types.ts` (heading: unlabeled reads as the current focus, `long-term` optionally marks a standing project-level direction; decision: considering/chosen; understanding: hypothesis; task: pending/active/done). The map is capped at 10 nodes (children included); a non-empty map must carry at least one heading — violations and over-capacity sets are rejected whole, never silently pruned (ADR 0015).
 
 ## Policies & Mandatory Rules
+
+### Context-facing text
+
+`promptGuidelines`, tool `description` / `promptSnippet`, tool result text, the injected `<workmap-state>` message, and every other string that reaches the LLM's context are product surface, not implementation details — rewording any of them changes the product's behavior everywhere it runs.
+
+- Discuss the intended wording with the human and converge it before editing code or pushing; never batch these changes with mechanical work.
+- While such text is being refined, do not push, re-run CI, or trigger reviews on intermediate versions.
+- Behavioral changes behind the text still follow the documentation policy below.
 
 ### Compatibility and documentation
 

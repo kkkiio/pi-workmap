@@ -1,6 +1,6 @@
 # ADR 0011: 嵌套 children、root-only id 与更新时序引导
 
-- Status: Accepted（修订 [ADR 0002](0002-single-parent-tree.md) 的校验方案）
+- Status: Superseded by [ADR 0015](0015-full-rewrite-set-add-drift-two-layer.md)（root id 寻址与整树 upsert 删除；single-parent 思想保留为两层结构）（修订 [ADR 0002](0002-single-parent-tree.md) 的校验方案）
 - Date: 2026-08-31
 
 ## Context

@@ -1,6 +1,6 @@
 # ADR 0013: widget 单一完整树视图与容量驱逐
 
-- Status: Accepted（取代 [ADR 0007](0007-compact-cluster-sampling.md)；修订 [ADR 0006](0006-note-free-context-snapshot.md) 的结论）
+- Status: Partially superseded by [ADR 0015](0015-full-rewrite-set-add-drift-two-layer.md)（单一完整树视图与 height contract 保留；驱逐与树龄删除，容量改为校验拒绝）
 - Date: 2026-09-01
 
 ## Context
