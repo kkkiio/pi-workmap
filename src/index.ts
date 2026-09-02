@@ -1,6 +1,6 @@
 import { type ExtensionAPI, SessionManager } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
-import { type TSchema, Type } from "typebox";
+import { Type } from "typebox";
 import { renderStateMessage, renderTreeLines } from "./context-message.js";
 import { NODE_TYPE_DESCRIPTIONS, WORKMAP_NODE_TYPES } from "./node-types.js";
 import { persistSnapshot } from "./session-entry.js";
@@ -130,11 +130,12 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
 			"You MUST re-declare the complete map via the `workmap` tool before your first action after every user prompt.",
-			"Rewrite the heading when your understanding changed, even if the user's words did not. A heading names the destination, never the route; routes are decisions. Status: current for where the user just pointed, long-term for the project-level direction this session serves.",
-			"Use decision for deliberation or commitments: title it as a question while deliberating, and once decided append the conclusion, e.g. 'Where should X live? → on the server', keeping the question for context; status considering while open, chosen once settled. Option only for considered alternatives under their decision.",
+			"You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When the mismatch resolves, record any lasting conclusion as a decision or understanding, then drop the drift in your next rewrite.",
+			"Use heading for the destination, never the route; routes are decisions. status current for where the user just pointed, long-term for the project-level direction this session serves.",
+			"Use decision for deliberation or commitments: title it as a question while deliberating, and once decided append the conclusion, e.g. 'Where should X live? → on the server', keeping the question for context; status considering while open, chosen once settled.",
+			"Use option only for considered alternatives under their decision.",
 			"Use understanding for current facts, syntheses, and hypotheses; status hypothesis marks an unverified premise. Counterintuitive findings belong here precisely because they are easy to lose.",
 			"Use task for actions you intend, are doing, or have done; status pending, active, or done. A done title records side effects — what changed, what ran.",
-			"You SHOULD add drift via `add_drift` the moment you change course or start working around a problem mid-task — drift is only for a detected mismatch between your direction and the user's intent or the declared map, not general risks or blockers. Remove it once the mismatch resolves, recording any lasting conclusion as a decision or understanding first; leave the rest of the map to the next full rewrite.",
 		],
 		parameters: SetParams,
 		executionMode: "sequential",

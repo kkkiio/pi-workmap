@@ -46,7 +46,7 @@ export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
 	decision: "A choice being deliberated or already made; title it as a question while considering",
 	option: "A considered alternative under its parent decision",
 	task: "An action the Agent intends, is doing, or has done; done titles record side effects",
-	drift: "A detected mismatch with user intent or the current map — not a general risk",
+	drift: "A mismatch with the declared plan",
 };
 
 /**
