@@ -16,7 +16,7 @@ pi install .
 
 ## Usage
 
-On every user prompt, before its first action, the Agent re-declares the complete map via the `workmap` tool — what you see is everything the Agent has declared, and it is never more than one prompt old. Mid-task course changes are reported the moment they happen through `add_drift`. A non-empty map always carries a `current` heading (where the user just pointed) and a `long-term` heading (the project-level direction this session serves); updates that exceed 10 signals or drop a heading are rejected whole, so what reaches the widget is always a map the Agent explicitly chose.
+On every user prompt, before its first action, the Agent re-declares the complete map via the `workmap` tool — what you see is everything the Agent has declared; if a rewrite slips, the injected snapshot escalates until it happens. Mid-task course changes are reported the moment they happen through `add_drift`. A non-empty map always carries a `current` heading (where the user just pointed) and a `long-term` heading (the project-level direction this session serves); updates that exceed 10 signals or drop a heading are rejected whole, so what reaches the widget is always a map the Agent explicitly chose.
 
 ## Session behavior
 
