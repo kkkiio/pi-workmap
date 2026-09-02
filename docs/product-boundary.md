@@ -6,7 +6,7 @@
 Current session                              Project lifetime
 ─────────────────────────────────────────    ─────────────────────────
 shared working model                         durable knowledge
-Heading / Understanding / Decision       code / ADR / design docs
+Goal / Understanding / Decision       code / ADR / design docs
 Option / Task / Drift
 fast-changing, incomplete, correctable       reviewed, intentional, stable
 may disappear with the session               source of truth

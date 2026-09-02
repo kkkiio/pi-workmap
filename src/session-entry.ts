@@ -3,7 +3,7 @@
  *
  * This module owns the wire format of persisted snapshots and the conversation
  * with the Pi session file — nothing else. Semantic validation of node content
- * (types, titles, capacity, the heading anchor) lives in state.ts; this module
+ * (types, titles, capacity, the goal anchor) lives in state.ts; this module
  * only
  * guarantees that what it hands over is a structurally plausible snapshot of
  * the current version.
@@ -26,11 +26,11 @@ import type { WorkmapRoot } from "./types.js";
 export const WORKMAP_ENTRY_TYPE = "pi-workmap-state";
 
 /**
- * Snapshot version 4: id-less two-layer roots. Tree age (`updatedAt`) is gone —
- * the map is fully rewritten every user prompt, so per-tree age has no meaning
- * to track (ADR 0015).
+ * Snapshot version 5: node type `heading` renamed to `goal`. Version 4
+ * snapshots migrate by remapping the type on read (ablation branch of
+ * ADR 0008's rename channel).
  */
-export const WORKMAP_SNAPSHOT_VERSION = 4;
+export const WORKMAP_SNAPSHOT_VERSION = 5;
 
 export interface WorkmapSnapshot {
 	version: typeof WORKMAP_SNAPSHOT_VERSION;
@@ -60,13 +60,30 @@ export function readLatestSnapshot(
 		const entry = entries[index];
 		if (entry.type !== "custom" || entry.customType !== WORKMAP_ENTRY_TYPE) continue;
 		const data = entry.data as Partial<WorkmapSnapshot> | undefined;
-		if (data?.version !== WORKMAP_SNAPSHOT_VERSION || !Array.isArray(data.nodes)) continue;
+		if (!Array.isArray(data?.nodes)) continue;
+		const version = data?.version as number | undefined;
+		if (version !== WORKMAP_SNAPSHOT_VERSION && version !== 4) continue;
 		// Guard before trusting the array: a malformed node (e.g. null) must skip
 		// the snapshot, not crash session start.
 		if (data.nodes.some((node) => !node || typeof node !== "object")) continue;
-		const nodes = data.nodes as WorkmapRoot[];
+		const nodes = version === 4 ? migrateV4Nodes(data.nodes as WorkmapRoot[]) : (data.nodes as WorkmapRoot[]);
 		if (!isValid(nodes)) continue;
 		return nodes;
 	}
 	return undefined;
+}
+
+/** Version 4 → 5: the `heading` node type was renamed to `goal` (ADR 0008 channel). */
+export function migrateV4Nodes(nodes: WorkmapRoot[]): WorkmapRoot[] {
+	const remap = (node: WorkmapRoot): WorkmapRoot => ({
+		...node,
+		type: (node.type as string) === "heading" ? "goal" : node.type,
+		// Migration runs before semantic validation: malformed children pass
+		// through untouched so validate() rejects the snapshot instead of this
+		// function crashing session start.
+		...(Array.isArray(node.children)
+			? { children: node.children.map((child) => (child && typeof child === "object" ? remap(child) : child)) }
+			: {}),
+	});
+	return nodes.map(remap);
 }

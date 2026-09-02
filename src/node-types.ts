@@ -13,8 +13,8 @@
 export const WORKMAP_NODE_TYPES = [
 	// The Agent's best present reading of what the user wants — a falsifiable
 	// paraphrase and the anchor every other signal is measured against. A
-	// heading names the destination, never the route (routes are decisions).
-	"heading",
+	// goal names the destination, never the route (routes are decisions).
+	"goal",
 	// A fact, synthesis, inference, or hypothesis the Agent currently uses.
 	// Counterintuitive findings belong here precisely because they are easy to
 	// lose; unverified premises are marked with the `hypothesis` status rather
@@ -41,7 +41,7 @@ export type WorkmapNodeType = (typeof WORKMAP_NODE_TYPES)[number];
 
 /** One scannable sentence per type, reused in schema descriptions. */
 export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
-	heading: "The Agent's best present reading of what the user wants — the falsifiable anchor of the map",
+	goal: "The Agent's best present reading of what the user wants — the falsifiable anchor of the map",
 	understanding: "A fact, synthesis, inference, or hypothesis the Agent currently uses",
 	decision: "A choice being deliberated or already made; title it as a question while considering",
 	option: "A considered alternative under its parent decision",
@@ -53,7 +53,7 @@ export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
  * Recommended status vocabulary per type. `status` itself stays a free-form
  * display annotation — no state machine (ADR 0003). The lists exist so
  * guidelines, schema descriptions, and any future validation share one source
- * and keep wording from drifting. An unlabeled heading reads as the current
+ * and keep wording from drifting. An unlabeled goal reads as the current
  * focus; `long-term` optionally marks a standing project-level direction.
  */
 export const DECISION_STATUSES = ["considering", "chosen"] as const;
@@ -65,7 +65,7 @@ export const DRIFT_STATUSES = ["detected"] as const;
 /**
  * Type invariants. Enforced where noted; otherwise taught in promptGuidelines.
  *
- * - A non-empty map carries at least one heading (enforced in state.ts) — the
+ * - A non-empty map carries at least one goal (enforced in state.ts) — the
  *   anchor the rest of the map is read against; `set: []` — clearing — is
  *   exempt. The anchor is guaranteed by validation, not prompt discipline.
  * - Options live only under their decision (guideline).

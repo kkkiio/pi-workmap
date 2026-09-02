@@ -7,7 +7,7 @@ Workmap 是 editor 上方的常驻 widget，只有一种渲染：完整树。容
 ## Visual language
 
 ```text
-✦  Heading
+✦  Goal
 •  Understanding
 ◆  Decision
 ◇  Option
@@ -15,9 +15,9 @@ Workmap 是 editor 上方的常驻 widget，只有一种渲染：完整树。容
 ⎇ Drift
 ```
 
-用色遵循 Pi 和 `pi-tasks` 的克制方式：正文与普通 glyph 使用默认文字色；Heading / Decision glyph 使用 accent，Drift 使用 error；`status` 与 tree connector 使用 dim。灰色只表示辅助信息，不额外编码领域状态。
+用色遵循 Pi 和 `pi-tasks` 的克制方式：正文与普通 glyph 使用默认文字色；Goal / Decision glyph 使用 accent，Drift 使用 error；`status` 与 tree connector 使用 dim。灰色只表示辅助信息，不额外编码领域状态。
 
-颜色表达的是"晚看的代价"而非严重程度：Drift 是唯一成本随延迟增长的信号——用户没看到的每一分钟，Agent 都可能带着偏差继续干活——所以它用最抢眼的 error 色；accent 用于定位方向（Heading / Decision）。Drift 本身只是"提请确认"：用户可以纠正、接受，或等待相关工作自然完成。如果实践中 Drift 频繁出现，应先修 Agent 的过度报告，而不是调低颜色。
+颜色表达的是"晚看的代价"而非严重程度：Drift 是唯一成本随延迟增长的信号——用户没看到的每一分钟，Agent 都可能带着偏差继续干活——所以它用最抢眼的 error 色；accent 用于定位方向（Goal / Decision）。Drift 本身只是"提请确认"：用户可以纠正、接受，或等待相关工作自然完成。如果实践中 Drift 频繁出现，应先修 Agent 的过度报告，而不是调低颜色。
 
 克制同样适用于文本：widget 只承载结构，不承载解释。具体含义是——屏上每一行文字都必须是一个信号本身（title 或 status），而不是关于信号的解释：没有图例、没有栏目标题、没有“what/why/how”式说明，意义全部由 glyph、颜色和 tree 结构承载。这样要求的原因：widget 是被动觉察表面，一场 session 里被扫过几十次，多一个字的解释都是几十次的重复阅读成本；而需要解释的内容（trade-off、原因、背景）在对话里已经有了家。Agent 天然倾向于在 UI 上补充说明文字，所以克制不靠 prompt 自觉，而靠结构保证——tool schema 和渲染管线里根本没有解释性文字的槽位，想写也无处可写。
 
@@ -34,7 +34,7 @@ Workmap · 7 signals
 └─ ◎ Check whether refresh can race                            pending
 ```
 
-非空 map 必含至少一条 heading（校验强制，不靠 prompt 自觉）——锚，其余信号对照它读；无标签的 heading 即当前焦点，排在最前，`long-term` 可选标注长期方向。其他类型的节点也可以作为 root。
+非空 map 必含至少一条 goal（校验强制，不靠 prompt 自觉）——对用户最终意图的解读，其余信号对照它读；无标签的 goal 即当前焦点，排在最前，`long-term` 可选标注长期方向；goal 只在意图理解变化或加深时更新，相位切换由 task 呈现。其他类型的节点也可以作为 root。
 
 ## Authentication bug
 
@@ -58,7 +58,7 @@ Option 的 trade-off 等解释性内容不进 widget，住在对话里。Decisio
 
 widget 没有折叠态：`MAX_WORKMAP_NODES = 10`（含 children 递归计数），header 一行加节点至多十行，屏上所见就是模型声明的全部，不存在隐藏计数或采样提示。超限时整次 `set` 被拒绝——没有静默驱逐，模型必须自己决定留哪 10 个，重发即生效。排序压力因此落在写图时，而且这个决定全程可见、可纠正。
 
-## Heading correction
+## Goal correction
 
 ```text
 Workmap · 7 signals · 1 drift
@@ -73,7 +73,7 @@ Drift 出现意味着 Agent 已识别真实不一致；它不是泛化的风险�
 ## Layout rules
 
 - widget 常驻 editor 上方，不使用 overlay，也不提供 human editor；纠正发生在对话中。
-- 单一完整树视图：Heading 类型的 root 置顶，锚先于细节；没有 compact/expanded 切换，也不复用 `app.tools.expand`。
+- 单一完整树视图：Goal 类型的 root 置顶，drift 紧随其后（方向之后先看偏差），其余 root 保持插入序；没有 compact/expanded 切换，也不复用 `app.tools.expand`。
 - header 的 drift 计数使用 error 色；drift 是唯一"晚看比早看贵"的信号，显著性必须第一。
 - 所有 glyph 统一按两个终端列宽的单元格渲染，宽于单列的 glyph 也与其他 glyph 的 title 保持同列左对齐。
 - `status` 只在 title 至少保留 20 列时右对齐；窄终端先隐藏 status，优先保留 title。

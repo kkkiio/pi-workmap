@@ -13,7 +13,7 @@ export interface WorkmapRoot extends WorkmapChild {
 }
 
 export interface WorkmapToolDetails {
-	version: 4;
+	version: 5;
 	action: "set" | "add";
 	changed: boolean;
 	error?: string;

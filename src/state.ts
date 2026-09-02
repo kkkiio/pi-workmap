@@ -47,7 +47,7 @@ export class WorkmapState {
 
 	/**
 	 * Full-map declaration: replaces everything, atomically. A non-empty set
-	 * must carry at least one heading (enforced here, not by prompt discipline),
+	 * must carry at least one goal (enforced here, not by prompt discipline),
 	 * and capacity is a hard rejection — the Agent decides what to drop, the
 	 * mechanism never silently prunes.
 	 */
@@ -60,7 +60,8 @@ export class WorkmapState {
 	}
 
 	/**
-	 * Append one drift mid-loop — the cheap escape hatch for course changes
+	 * Record one drift mid-loop — appended to the state, hoisted below the goal
+	 * in every rendering. The cheap escape hatch for course changes
 	 * that would otherwise be lost before the next full rewrite. Rejected on an
 	 * empty map (a lone drift cannot open one) and at capacity.
 	 */
@@ -96,8 +97,8 @@ export class WorkmapState {
 			return `The map is limited to ${MAX_WORKMAP_NODES} nodes (children included) — keep the ones that matter most and re-declare`;
 		}
 		// Clearing (empty set) is exempt from the anchor requirement.
-		if (roots.length > 0 && !roots.some((root) => root.type === "heading")) {
-			return "A non-empty map needs at least one heading — the anchor the rest of the map is read against.";
+		if (roots.length > 0 && !roots.some((root) => root.type === "goal")) {
+			return "A non-empty map needs at least one goal — the anchor the rest of the map is read against.";
 		}
 		return roots;
 	}

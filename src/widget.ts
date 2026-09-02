@@ -1,5 +1,6 @@
 import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { orderedRoots } from "./context-message.js";
 import type { WorkmapNodeType } from "./node-types.js";
 import { countNodes, type WorkmapChild, type WorkmapRoot } from "./types.js";
 
@@ -11,7 +12,7 @@ export const PRESENTATION: Record<
 	WorkmapNodeType,
 	{ glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }
 > = {
-	heading: { glyph: "✦", glyphColor: "accent" },
+	goal: { glyph: "✦", glyphColor: "accent" },
 	understanding: { glyph: "•", glyphColor: "text" },
 	decision: { glyph: "◆", glyphColor: "accent" },
 	option: { glyph: "◇", glyphColor: "text" },
@@ -80,12 +81,7 @@ export class WorkmapWidget {
 			const nodes = this.getNodes();
 			if (nodes.length === 0 || width < 8) return [];
 			const lines = [theme.fg("accent", theme.bold(this.renderSummary(nodes, theme)))];
-			// Heading roots lead the tree, following the tech-doc convention that the
-			// goals section precedes the details.
-			const ordered = [
-				...nodes.filter((node) => node.type === "heading"),
-				...nodes.filter((node) => node.type !== "heading"),
-			];
+			const ordered = orderedRoots(nodes);
 			for (const root of ordered) {
 				lines.push(this.renderNode(root, "", width, theme));
 				const children = root.children ?? [];
