@@ -123,6 +123,7 @@
 - 链接：[“The role of shared mental models in human-AI teams: a theoretical review”](https://doi.org/10.1080/1463922X.2022.2061080)、[“Shared Mental Models in Human-Machine Systems”](https://doi.org/10.1016/j.ifacol.2016.10.517)
 - 可借鉴点：共同理解能支撑团队预测、协调与问题解决；human–AI teaming 需要考虑模型如何形成、更新和校准，而不只是解释单个输出。
 - 对产品的启发：Workmap 应是随工作演化的协作结构，而不是完成后才生成的 explanation。
+- 本项目文档中的 "shared mental model gap" 即指这条脉络里的 SMM (mis)alignment：双方向对目标、信念与方向形成不同模型。
 
 ### Out-of-the-loop performance problem
 

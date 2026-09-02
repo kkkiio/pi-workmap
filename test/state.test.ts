@@ -1,17 +1,34 @@
 import type { ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
-import { MAX_WORKMAP_NODES, WORKMAP_ENTRY_TYPE, WorkmapState } from "../src/state.js";
-import type { WorkmapRoot, WorkmapSnapshot } from "../src/types.js";
+import { WORKMAP_ENTRY_TYPE, WORKMAP_SNAPSHOT_VERSION, type WorkmapSnapshot } from "../src/session-entry.js";
+import { MAX_WORKMAP_NODES, WorkmapState } from "../src/state.js";
+import type { WorkmapRoot } from "../src/types.js";
 
-const goal: WorkmapRoot = { id: "fix_auth", type: "heading", title: "Stop random logouts", status: "current" };
+const currentHeading: WorkmapRoot = { type: "heading", title: "Stop random logouts", status: "current" };
+const longTermHeading: WorkmapRoot = { type: "heading", title: "Keep the auth layer trustworthy", status: "long-term" };
 
-function tree(id: string, childCount: number): WorkmapRoot {
+/** A valid two-heading base map, ready for extras. */
+function baseMap(): WorkmapRoot[] {
+	return [longTermHeading, { ...currentHeading }];
+}
+
+function tree(title: string, childCount = 0): WorkmapRoot {
 	return {
-		id,
 		type: "task",
-		title: `Tree ${id}`,
-		children: Array.from({ length: childCount }, (_, index) => ({ type: "task", title: `${id} child ${index}` })),
+		title,
+		...(childCount > 0
+			? {
+					children: Array.from({ length: childCount }, (_, index) => ({
+						type: "task" as const,
+						title: `${title} ${index}`,
+					})),
+				}
+			: {}),
 	};
+}
+
+function fullMap(): WorkmapRoot[] {
+	return [...baseMap(), ...Array.from({ length: MAX_WORKMAP_NODES - 2 }, (_, index) => tree(`Filler ${index}`))];
 }
 
 function sessionWith(entries: SessionEntry[]): ExtensionContext["sessionManager"] {
@@ -20,171 +37,126 @@ function sessionWith(entries: SessionEntry[]): ExtensionContext["sessionManager"
 	} as unknown as ExtensionContext["sessionManager"];
 }
 
-describe("WorkmapState", () => {
-	it("upserts whole trees by root id and preserves their position", () => {
-		const state = new WorkmapState();
-		expect(
-			state.update(
-				[
-					goal,
-					{
-						id: "refresh_race",
-						type: "task",
-						title: "Check whether refresh can race across workers",
-						children: [{ type: "task", title: "Trace worker IDs" }],
-					},
-				],
-				[],
-			),
-		).toEqual({ changed: true });
+function snapshotEntry(nodes: unknown): SessionEntry {
+	return {
+		type: "custom",
+		id: "entry-0",
+		parentId: null,
+		timestamp: new Date(0).toISOString(),
+		customType: WORKMAP_ENTRY_TYPE,
+		data: { version: WORKMAP_SNAPSHOT_VERSION, nodes },
+	} as unknown as SessionEntry;
+}
 
-		expect(state.update([{ ...goal, title: "Keep users signed in" }], [])).toEqual({ changed: true });
-		expect(state.list().map((node) => node.id)).toEqual(["fix_auth", "refresh_race"]);
-		expect(state.list()[0]?.title).toBe("Keep users signed in");
-		expect(state.list()[1]?.children).toHaveLength(1);
+describe("WorkmapState.set", () => {
+	it("replaces the whole map atomically", () => {
+		const state = new WorkmapState();
+		expect(state.set(baseMap())).toEqual({ changed: true });
+
+		expect(state.set([longTermHeading, { ...currentHeading, title: "Fix the flaky auth test" }])).toEqual({
+			changed: true,
+		});
+		expect(state.list()).toEqual([
+			longTermHeading,
+			{ type: "heading", title: "Fix the flaky auth test", status: "current" },
+		]);
 	});
 
-	it("replaces the entire subtree when a root is re-upserted", () => {
+	it("treats a byte-identical re-declaration as no change", () => {
 		const state = new WorkmapState();
-		state.update([{ ...goal, children: [{ type: "task", title: "Old child" }] }], []);
-
-		state.update([goal], []);
-
-		expect(state.list()[0]?.children).toBeUndefined();
+		state.set(baseMap());
+		expect(state.set(structuredClone(baseMap()))).toEqual({ changed: false });
 	});
 
-	it("removes whole trees by root id", () => {
+	it("clears with an empty array", () => {
 		const state = new WorkmapState();
-		state.update([goal, { id: "side_quest", type: "task", title: "Polish glyphs" }], []);
-
-		expect(state.update([], ["side_quest"])).toEqual({ changed: true });
-		expect(state.update([], ["missing"])).toEqual({ changed: false });
-		expect(state.list().map((node) => node.id)).toEqual(["fix_auth"]);
+		state.set(baseMap());
+		expect(state.set([])).toEqual({ changed: true });
+		expect(state.list()).toEqual([]);
+		expect(state.set([])).toEqual({ changed: false });
 	});
 
-	it("rejects invalid roots and child ids without changing state", () => {
+	it("rejects a non-empty map without both headings", () => {
 		const state = new WorkmapState();
-		state.update([goal], []);
-
-		expect(state.update([{ id: "Fix Auth", type: "heading", title: "Bad id" }], []).error).toContain(
-			"Invalid semantic id",
+		expect(state.set([{ ...currentHeading }]).error).toContain("long-term heading");
+		expect(state.set([longTermHeading]).error).toContain("current heading");
+		expect(state.set([{ ...longTermHeading, type: "task", title: "Not a heading" }, { ...currentHeading }]).error).toBe(
+			"A non-empty map needs a long-term heading",
 		);
-		expect(
-			state.update(
-				[{ id: "ok_id", type: "task", title: "T", children: [{ id: "nested", type: "task", title: "C" } as never] }],
-				[],
-			).error,
-		).toContain("must not carry ids");
-		expect(state.list()).toEqual([goal]);
+		expect(state.list()).toEqual([]);
 	});
 
-	it("never accepts notes: the field was removed from the schema (ADR 0013)", () => {
+	it("rejects over-capacity maps instead of evicting", () => {
 		const state = new WorkmapState();
-		const withNote = { ...goal, note: "stale field" } as WorkmapRoot;
-		state.update([withNote], []);
-		expect(state.list()[0]).toEqual(goal);
-	});
-
-	it("evicts the oldest live-signal-free tree first when over capacity", () => {
-		const state = new WorkmapState();
-		state.update([tree("old", 1), tree("mid", 1)], [], 1_000);
-		state.update([tree("new", 1)], [], 2_000);
-		expect(state.update([tree("fill", 3)], [], 3_000).evicted).toBeUndefined();
-
-		const result = state.update([tree("extra", 0)], [], 4_000);
-		expect(result.evicted).toEqual([{ id: "old", title: "Tree old" }]);
-		expect(state.list().map((node) => node.id)).toEqual(["mid", "new", "fill", "extra"]);
-	});
-
-	it("refreshes tree age on re-assertion and shields live signals from tier-one eviction", () => {
-		const state = new WorkmapState();
-		state.update([tree("plain", 1)], [], 1_000);
-		state.update(
-			[{ id: "open", type: "decision", title: "Where does refresh live?", status: "considering" }],
-			[],
-			1_000,
-		);
-		// Re-asserting `plain` refreshes its age above `open`'s, even though the
-		// content is unchanged and the update is a no-op otherwise.
-		state.update([tree("plain", 1)], [], 2_000);
-		state.update(
-			Array.from({ length: MAX_WORKMAP_NODES - 3 }, (_, index) => tree(`fill${index}`, 0)),
-			[],
-			3_000,
-		);
-
-		const result = state.update([tree("extra", 0)], [], 4_000);
-		expect(result.evicted).toEqual([{ id: "plain", title: "Tree plain" }]);
-		expect(state.list().map((node) => node.id)).toContain("open");
-	});
-
-	it("refreshes age on byte-identical re-assertion, not just on content changes", () => {
-		const state = new WorkmapState();
-		state.update([tree("a", 0), tree("b", 0)], [], 1_000);
-		// Identical content: the update is a no-op visually, but `a`'s age refreshes.
-		state.update([tree("a", 0)], [], 2_000);
-		state.update(
-			Array.from({ length: 7 }, (_, index) => tree(`f${index}`, 0)),
-			[],
-			3_000,
-		);
-		expect(state.update([tree("extra", 0)], [], 4_000).evicted).toBeUndefined();
-
-		const result = state.update([tree("extra2", 0)], [], 5_000);
-		expect(result.evicted).toEqual([{ id: "b", title: "Tree b" }]);
-		expect(state.list().map((node) => node.id)).toContain("a");
-	});
-
-	it("falls back to evicting live-signal trees when nothing else remains", () => {
-		const state = new WorkmapState();
-		state.update(
-			Array.from({ length: MAX_WORKMAP_NODES - 1 }, (_, index) => ({
-				id: `open${index}`,
-				type: "decision",
-				title: `Open ${index}`,
-				status: "considering",
-			})),
-			[],
-			1_000,
-		);
-		state.update([{ id: "drift_root", type: "drift", title: "Off course", status: "detected" }], [], 2_000);
-
-		const result = state.update([tree("extra", 0)], [], 3_000);
-		expect(result.evicted).toEqual([{ id: "open0", title: "Open 0" }]);
-		expect(state.list()).toHaveLength(MAX_WORKMAP_NODES);
-	});
-
-	it("never evicts trees upserted in the same call", () => {
-		const state = new WorkmapState();
-		state.update(
-			[tree("old", 0), ...Array.from({ length: MAX_WORKMAP_NODES - 2 }, (_, index) => tree(`fill${index}`, 0))],
-			[],
-			1_000,
-		);
-		// Two fresh trees arrive at full capacity: the oldest prior tree must go,
-		// never the fresh siblings.
-		const result = state.update([tree("fresh_a", 0), tree("fresh_b", 0)], [], 2_000);
-		expect(result.evicted).toEqual([{ id: "old", title: "Tree old" }]);
-		expect(state.list().map((node) => node.id)).toContain("fresh_a");
-		expect(state.list()).toHaveLength(MAX_WORKMAP_NODES);
-	});
-
-	it("rejects an update that exceeds capacity even with every prior tree evicted", () => {
-		const state = new WorkmapState();
-		state.update([goal], [], 1_000);
-
-		const result = state.update([tree("huge", MAX_WORKMAP_NODES)], [], 2_000);
+		const result = state.set([tree("Huge", MAX_WORKMAP_NODES - 2), ...baseMap()]);
 		expect(result.changed).toBe(false);
-		expect(result.error).toContain("capacity");
-		expect(state.list()).toEqual([goal]);
+		expect(result.error).toContain("limited to 10 nodes");
+		expect(state.list()).toEqual([]);
 	});
 
-	it("restores the latest v3 snapshot from the whole session rather than the active branch", () => {
-		const oldSnapshot: WorkmapSnapshot = { version: 3, nodes: [{ ...goal, updatedAt: 1 }] };
+	it("rejects nesting deeper than two levels", () => {
+		const state = new WorkmapState();
+		const deep = {
+			...currentHeading,
+			title: "Deep",
+			children: [{ type: "task", title: "Child", children: [{ type: "task", title: "Grandchild" }] }],
+		} as WorkmapRoot;
+		expect(state.set([longTermHeading, deep]).error).toContain("nesting deeper than 2 levels");
+	});
+
+	it("rejects invalid nodes without changing state", () => {
+		const state = new WorkmapState();
+		state.set(baseMap());
+		expect(state.set([longTermHeading, { ...currentHeading, type: "nonsense" as never }]).error).toContain(
+			"invalid node type",
+		);
+		expect(state.set([longTermHeading, { ...currentHeading, title: "" }]).error).toContain("invalid title");
+		expect(state.list()).toEqual(baseMap());
+	});
+
+	it("sanitizes control characters and drops empty children", () => {
+		const state = new WorkmapState();
+		state.set([longTermHeading, { ...currentHeading, title: "Fix\tthe  flaky\nauth test", children: [] }]);
+		expect(state.list()[1]?.title).toBe("Fix the flaky auth test");
+		expect(state.list()[1]?.children).toBeUndefined();
+	});
+});
+
+describe("WorkmapState.addDrift", () => {
+	it("appends a drift with the detected status", () => {
+		const state = new WorkmapState();
+		state.set(baseMap());
+		expect(state.addDrift("Implementation is becoming a todo manager")).toEqual({ changed: true });
+		expect(state.list().at(-1)).toEqual({
+			type: "drift",
+			title: "Implementation is becoming a todo manager",
+			status: "detected",
+		});
+	});
+
+	it("rejects on an empty map: a lone drift cannot open one", () => {
+		const state = new WorkmapState();
+		expect(state.addDrift("Off course").error).toContain("empty");
+		expect(state.list()).toEqual([]);
+	});
+
+	it("rejects at capacity instead of evicting", () => {
+		const state = new WorkmapState();
+		state.set(fullMap());
+		const result = state.addDrift("Off course");
+		expect(result.error).toContain("full (10 nodes)");
+		expect(state.list()).toEqual(fullMap());
+	});
+});
+
+describe("WorkmapState.restore", () => {
+	it("restores the latest snapshot rather than the active branch", () => {
+		const oldSnapshot: WorkmapSnapshot = { version: WORKMAP_SNAPSHOT_VERSION, nodes: baseMap() };
 		const latestSnapshot: WorkmapSnapshot = {
-			version: 3,
+			version: WORKMAP_SNAPSHOT_VERSION,
 			nodes: [
-				{ id: "new_direction", type: "drift", title: "Implementation follows an obsolete decision", updatedAt: 2 },
+				...baseMap(),
+				{ type: "drift", title: "Implementation follows an obsolete decision", status: "detected" },
 			],
 		};
 		const entries = [oldSnapshot, latestSnapshot].map(
@@ -202,111 +174,48 @@ describe("WorkmapState", () => {
 
 		state.restore(sessionWith(entries));
 
-		expect(state.list()).toEqual(latestSnapshot.nodes.map(({ updatedAt: _ignored, ...root }) => root));
+		expect(state.list()).toEqual(latestSnapshot.nodes);
 	});
 
-	it("evicts oversized snapshots down to capacity on restore", () => {
-		const nodes = Array.from({ length: MAX_WORKMAP_NODES + 2 }, (_, index) => ({
-			id: `root${index}`,
-			type: "task" as const,
-			title: `Tree ${index}`,
-			updatedAt: 1_000 + index,
-		}));
-		const entries = [
-			{
-				type: "custom",
-				id: "entry-0",
-				parentId: null,
-				timestamp: new Date(0).toISOString(),
-				customType: WORKMAP_ENTRY_TYPE,
-				data: { version: 3, nodes } as WorkmapSnapshot,
-			} as SessionEntry,
-		];
+	it("starts empty without snapshots", () => {
 		const state = new WorkmapState();
-
-		state.restore(sessionWith(entries));
-
-		const ids = state.list().map((node) => node.id);
-		expect(ids).toHaveLength(MAX_WORKMAP_NODES);
-		expect(ids).not.toContain("root0");
-		expect(ids).not.toContain("root1");
+		state.set(baseMap());
+		state.restore(sessionWith([]));
+		expect(state.list()).toEqual([]);
 	});
 
 	it("skips snapshots with malformed nodes instead of crashing", () => {
-		const snapshot = {
-			version: 3,
-			nodes: [null, goal],
-		};
-		const entries = [
-			{
-				type: "custom",
-				id: "entry-0",
-				parentId: null,
-				timestamp: new Date(0).toISOString(),
-				customType: WORKMAP_ENTRY_TYPE,
-				data: snapshot,
-			} as unknown as SessionEntry,
-		];
 		const state = new WorkmapState();
-
-		state.restore(sessionWith(entries));
-
+		state.restore(sessionWith([snapshotEntry([null, currentHeading])]));
 		expect(state.list()).toEqual([]);
 	});
 
-	it("skips snapshots with deeper nesting than the schema allows", () => {
-		const deep: { id: string; type: "task"; title: string; children?: never[] } = {
-			id: "deep",
-			type: "task",
-			title: "root",
-		};
-		let cursor = deep as unknown as {
-			id: string;
-			type: "task";
-			title: string;
-			children?: { id?: string; type: "task"; title: string }[];
-		};
-		for (let level = 2; level <= 4; level += 1) {
-			const child = { type: "task" as const, title: `level ${level}` };
-			cursor.children = [child];
-			cursor = child as typeof cursor;
-		}
-		const entries = [
-			{
-				type: "custom",
-				id: "entry-0",
-				parentId: null,
-				timestamp: new Date(0).toISOString(),
-				customType: WORKMAP_ENTRY_TYPE,
-				data: { version: 3, nodes: [{ ...deep, updatedAt: 1 }] },
-			} as unknown as SessionEntry,
-		];
+	it("skips over-capacity snapshots", () => {
 		const state = new WorkmapState();
-
-		state.restore(sessionWith(entries));
-
+		state.restore(sessionWith([snapshotEntry([tree("Huge", MAX_WORKMAP_NODES), ...baseMap()])]));
 		expect(state.list()).toEqual([]);
 	});
 
-	it("skips legacy snapshots: workmap state is ephemeral by design", () => {
-		const legacySnapshot = {
-			version: 2,
-			nodes: [goal, { id: "child", type: "task", title: "Nested child", note: "stale field" }],
-		};
-		const entries = [
-			{
-				type: "custom",
-				id: "entry-0",
-				parentId: null,
-				timestamp: new Date(0).toISOString(),
-				customType: WORKMAP_ENTRY_TYPE,
-				data: legacySnapshot,
-			} as SessionEntry,
-		];
+	it("skips snapshots violating the double heading", () => {
 		const state = new WorkmapState();
+		state.restore(sessionWith([snapshotEntry([{ type: "task", title: "No heading here" }])]));
+		expect(state.list()).toEqual([]);
+	});
 
-		state.restore(sessionWith(entries));
-
+	it("skips legacy snapshot versions: workmap state is ephemeral by design", () => {
+		const state = new WorkmapState();
+		state.restore(
+			sessionWith([
+				{
+					type: "custom",
+					id: "entry-0",
+					parentId: null,
+					timestamp: new Date(0).toISOString(),
+					customType: WORKMAP_ENTRY_TYPE,
+					data: { version: 3, nodes: [{ id: "old", type: "task", title: "Legacy" }] },
+				} as unknown as SessionEntry,
+			]),
+		);
 		expect(state.list()).toEqual([]);
 	});
 });

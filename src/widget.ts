@@ -1,6 +1,7 @@
 import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { countNodes, type WorkmapChild, type WorkmapNodeType, type WorkmapRoot } from "./types.js";
+import type { WorkmapNodeType } from "./node-types.js";
+import { countNodes, type WorkmapChild, type WorkmapRoot } from "./types.js";
 
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;
@@ -71,8 +72,9 @@ export class WorkmapWidget {
 		this.ui = undefined;
 	}
 
-	// Single rendering mode: the complete tree, every node visible (ADR 0013). The
-	// node cap in state guarantees this never overflows — there is nothing hidden.
+	// Single rendering mode: the complete two-layer tree, every node visible
+	// (ADR 0015). The node cap in state guarantees this never overflows — there
+	// is nothing hidden.
 	private render(width: number, theme: Theme): string[] {
 		try {
 			const nodes = this.getNodes();
@@ -84,15 +86,14 @@ export class WorkmapWidget {
 				...nodes.filter((node) => node.type === "heading"),
 				...nodes.filter((node) => node.type !== "heading"),
 			];
-			const visit = (node: WorkmapChild, prefix: string, connector: string, childPrefix: string): void => {
-				lines.push(this.renderNode(node, `${prefix}${connector}`, width, theme));
-				const descendants = node.children ?? [];
-				for (const [index, child] of descendants.entries()) {
-					const last = index === descendants.length - 1;
-					visit(child, `${prefix}${childPrefix}`, last ? "└─ " : "├─ ", last ? "   " : "│  ");
-				}
-			};
-			for (const root of ordered) visit(root, "", "", "");
+			for (const root of ordered) {
+				lines.push(this.renderNode(root, "", width, theme));
+				const children = root.children ?? [];
+				children.forEach((child, index) => {
+					const connector = index === children.length - 1 ? "└─ " : "├─ ";
+					lines.push(this.renderNode(child, connector, width, theme));
+				});
+			}
 			return lines.map((line) => truncateToWidth(line, width));
 		} catch {
 			return [];
@@ -101,11 +102,11 @@ export class WorkmapWidget {
 
 	private renderSummary(nodes: WorkmapRoot[], theme: Theme): string {
 		let driftCount = 0;
-		const stack: WorkmapChild[] = [...nodes];
-		while (stack.length > 0) {
-			const node = stack.pop() as WorkmapChild;
+		for (const node of nodes) {
 			if (node.type === "drift") driftCount += 1;
-			if (node.children) stack.push(...node.children);
+			for (const child of node.children ?? []) {
+				if (child.type === "drift") driftCount += 1;
+			}
 		}
 		const base = theme.fg("accent", theme.bold(`Workmap · ${countNodes(nodes)} signals`));
 		if (!driftCount) return base;

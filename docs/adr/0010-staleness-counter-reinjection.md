@@ -1,6 +1,6 @@
 # ADR 0010: 反转为每 run 重注 + staleness 计数
 
-- Status: Accepted（修订 [ADR 0004](0004-context-injection.md) 的"去重的取舍"一节）
+- Status: Partially superseded by [ADR 0015](0015-full-rewrite-set-add-drift-two-layer.md)（每 run 重注入保留；turn 计数被 prompt 计数 + 两级升级取代）
 - Date: 2026-08-31
 
 ## Context
