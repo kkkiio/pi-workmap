@@ -56,10 +56,7 @@ describe("WorkmapState.set", () => {
 		expect(state.set([longTermGoal, { ...currentGoal, title: "Fix the flaky auth test" }])).toEqual({
 			changed: true,
 		});
-		expect(state.list()).toEqual([
-			longTermGoal,
-			{ type: "goal", title: "Fix the flaky auth test", status: "current" },
-		]);
+		expect(state.list()).toEqual([longTermGoal, { type: "goal", title: "Fix the flaky auth test", status: "current" }]);
 	});
 
 	it("treats a byte-identical re-declaration as no change", () => {
