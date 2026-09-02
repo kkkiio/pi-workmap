@@ -129,7 +129,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		promptSnippet:
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
-			"You MUST re-declare the complete map via the `workmap` tool before your first action after every user prompt.",
+			"You MUST re-declare the complete map via the `workmap` tool before your first action after every user prompt — every non-empty map needs at least one heading.",
 			"You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When the mismatch resolves, record any lasting conclusion as a decision or understanding, then drop the drift in your next rewrite.",
 			"Use heading for the destination, never the route; routes are decisions. Lead with your reading of the user's latest prompt; a standing project-level direction may be marked long-term.",
 			"Use decision for deliberation or commitments: title it as a question while deliberating, and once decided append the conclusion, e.g. 'Where should X live? → on the server', keeping the question for context; status considering while open, chosen once settled.",
