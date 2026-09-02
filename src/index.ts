@@ -140,9 +140,11 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		parameters: SetParams,
 		executionMode: "sequential",
 		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-			// Any call — including a no-change re-assertion — re-anchors the map.
-			promptsSinceRewrite = 0;
+			// Only an accepted declaration re-anchors the map: a rejected set changed
+			// nothing, and resetting here would let repeated invalid calls suppress
+			// the stale warning indefinitely.
 			const result = state.set((params as { set: WorkmapRoot[] }).set);
+			if (!result.error) promptsSinceRewrite = 0;
 			widget.update();
 			return finish("set", result);
 		},

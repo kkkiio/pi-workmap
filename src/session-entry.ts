@@ -15,8 +15,8 @@
  *
  * Versioning: snapshots predating the current version are skipped without
  * migration — the package is unpublished and workmap state is ephemeral by
- * design (situation awareness, not storage). The newest current-version
- * snapshot wins; older versions are simply not found.
+ * design (situation awareness, not storage). The newest snapshot that passes
+ * the caller's semantic validation wins; older or invalid ones are skipped.
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -44,11 +44,15 @@ export function persistSnapshot(pi: Pick<ExtensionAPI, "appendEntry">, nodes: re
 }
 
 /**
- * Nodes of the newest current-version snapshot, or undefined when the session
- * carries none (including sessions that only carry older versions).
+ * Nodes of the newest snapshot that passes `isValid`, or undefined when the
+ * session carries none (including sessions that only carry older versions or
+ * snapshots the validator rejects). The fallback to older entries makes a
+ * corrupted or hand-edited newest snapshot degrade to the previous state
+ * instead of wiping the map.
  */
 export function readLatestSnapshot(
 	sessionManager: Pick<ExtensionContext["sessionManager"], "getEntries">,
+	isValid: (nodes: WorkmapRoot[]) => boolean,
 ): WorkmapRoot[] | undefined {
 	const entries = sessionManager.getEntries();
 	for (let index = entries.length - 1; index >= 0; index -= 1) {
@@ -59,7 +63,9 @@ export function readLatestSnapshot(
 		// Guard before trusting the array: a malformed node (e.g. null) must skip
 		// the snapshot, not crash session start.
 		if (data.nodes.some((node) => !node || typeof node !== "object")) continue;
-		return data.nodes as WorkmapRoot[];
+		const nodes = data.nodes as WorkmapRoot[];
+		if (!isValid(nodes)) continue;
+		return nodes;
 	}
 	return undefined;
 }

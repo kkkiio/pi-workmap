@@ -35,15 +35,14 @@ export class WorkmapState {
 		return true;
 	}
 
-	/** Restore the newest valid snapshot; anything invalid leaves an empty map. */
+	/** Restore the newest snapshot that passes validation; none leaves an empty map. */
 	restore(sessionManager: Pick<ExtensionContext["sessionManager"], "getEntries">): void {
-		const nodes = readLatestSnapshot(sessionManager);
+		const nodes = readLatestSnapshot(sessionManager, (candidates) => typeof this.validate(candidates) !== "string");
 		if (!nodes) {
 			this.roots = [];
 			return;
 		}
-		const validated = this.validate(nodes as WorkmapRoot[]);
-		this.roots = typeof validated === "string" ? [] : validated;
+		this.roots = this.validate(nodes) as WorkmapRoot[];
 	}
 
 	/**

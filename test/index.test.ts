@@ -168,5 +168,24 @@ describe("workmap extension lifecycle", () => {
 			expect(drift.isError).toBe(true);
 			expect(drift.details.error).toContain("empty");
 		});
+
+		it("does not re-anchor the map on a rejected set", async () => {
+			const { handlers, context, getTool } = setup();
+			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
+			await getTool("workmap").execute("call", { set: baseMap }, undefined, undefined, undefined);
+			await beforeAgentStart(handlers, context);
+
+			// A rejected set changed nothing: it must not reset the stale counter.
+			await getTool("workmap").execute(
+				"call",
+				{ set: [{ type: "task", title: "Hand-edited, no headings" }] },
+				undefined,
+				undefined,
+				undefined,
+			);
+			await beforeAgentStart(handlers, context);
+			const result = await beforeAgentStart(handlers, context);
+			expect(result?.message?.content).toContain("3 user prompts stale");
+		});
 	});
 });

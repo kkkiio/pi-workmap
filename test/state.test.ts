@@ -184,6 +184,14 @@ describe("WorkmapState.restore", () => {
 		expect(state.list()).toEqual([]);
 	});
 
+	it("falls back to the previous snapshot when the newest is semantically invalid", () => {
+		const state = new WorkmapState();
+		state.restore(
+			sessionWith([snapshotEntry(baseMap()), snapshotEntry([{ type: "task", title: "Hand-edited, no headings" }])]),
+		);
+		expect(state.list()).toEqual(baseMap());
+	});
+
 	it("skips snapshots with malformed nodes instead of crashing", () => {
 		const state = new WorkmapState();
 		state.restore(sessionWith([snapshotEntry([null, currentHeading])]));
