@@ -34,7 +34,7 @@ Workmap · 7 signals
 └─ ◎ Check whether refresh can race                            pending
 ```
 
-非空 map 必含至少一个 current 和一个 long-term heading（校验强制，不靠 prompt 自觉）；heading root 置顶。其他类型的节点也可以作为 root。
+非空 map 必含一条 status 为 "long-term" 的 heading —— 本 session 服务的项目级方向（校验强制，不靠 prompt 自觉）；无标签的 heading 即当前焦点，排在最前。其他类型的节点也可以作为 root。
 
 ## Authentication bug
 
