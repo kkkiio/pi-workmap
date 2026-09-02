@@ -33,7 +33,7 @@ Workmap · 9 signals
 
 - Every prompt, before acting, the Agent re-declares this complete map; a mid-task course change is appended on the spot via `add_drift`.
 - Something looks off? Say so in conversation — the Agent updates the map and its course.
-- Hard limits, enforced by rejection: at most 10 signals, every map anchored by a `long-term` heading.
+- Hard limits, enforced by rejection: at most 10 signals, every map anchored by at least one heading.
 
 ## Session behavior
 

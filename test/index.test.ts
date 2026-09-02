@@ -153,7 +153,7 @@ describe("workmap extension lifecycle", () => {
 				details: { error?: string };
 			};
 			expect(badSet.isError).toBe(true);
-			expect(badSet.details.error).toContain('status "long-term"');
+			expect(badSet.details.error).toContain("at least one heading");
 
 			const drift = (await getTool("add_drift").execute(
 				"call",

@@ -3,8 +3,8 @@
  *
  * This module owns the wire format of persisted snapshots and the conversation
  * with the Pi session file — nothing else. Semantic validation of node content
- * (types, titles, capacity, the long-term anchor) lives in state.ts; this
- * module only
+ * (types, titles, capacity, the heading anchor) lives in state.ts; this module
+ * only
  * guarantees that what it hands over is a structurally plausible snapshot of
  * the current version.
  *

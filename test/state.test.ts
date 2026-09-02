@@ -76,16 +76,14 @@ describe("WorkmapState.set", () => {
 		expect(state.set([])).toEqual({ changed: false });
 	});
 
-	it("rejects a non-empty map without a long-term heading", () => {
+	it("rejects a non-empty map without any heading", () => {
 		const state = new WorkmapState();
-		const expected =
-			'A non-empty map needs a heading with status "long-term" — the project-level goal this session serves.';
-		expect(state.set([{ ...currentHeading }]).error).toBe(expected);
+		const expected = "A non-empty map needs at least one heading — the anchor the rest of the map is read against.";
+		expect(state.set([{ type: "task", title: "No heading here" }]).error).toBe(expected);
 
-		// A single long-term heading is a valid map on its own.
+		// Any heading anchors the map; the long-term label is optional.
+		expect(state.set([{ ...currentHeading }])).toEqual({ changed: true });
 		expect(state.set([longTermHeading])).toEqual({ changed: true });
-		expect(state.set([{ ...longTermHeading, type: "task", title: "Not a heading" }]).error).toBe(expected);
-		expect(state.list()).toEqual([longTermHeading]);
 	});
 
 	it("rejects over-capacity maps instead of evicting", () => {

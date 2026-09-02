@@ -52,11 +52,10 @@ export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
 /**
  * Recommended status vocabulary per type. `status` itself stays a free-form
  * display annotation — no state machine (ADR 0003). The lists exist so
- * guidelines, schema descriptions, and any future validation share one source;
- * only REQUIRED_HEADING_STATUS is semantically load-bearing, the rest keep
- * wording from drifting.
+ * guidelines, schema descriptions, and any future validation share one source
+ * and keep wording from drifting. An unlabeled heading reads as the current
+ * focus; `long-term` optionally marks a standing project-level direction.
  */
-export const REQUIRED_HEADING_STATUS = "long-term";
 export const DECISION_STATUSES = ["considering", "chosen"] as const;
 export const UNDERSTANDING_STATUSES = ["observed", "inferred", "hypothesis"] as const;
 export const TASK_STATUSES = ["pending", "active", "done"] as const;
@@ -66,8 +65,8 @@ export const DRIFT_STATUSES = ["detected"] as const;
 /**
  * Type invariants. Enforced where noted; otherwise taught in promptGuidelines.
  *
- * - A non-empty map carries at least one `heading · current` and one
- *   `heading · long-term` (enforced in state.ts); `set: []` — clearing — is
+ * - A non-empty map carries at least one heading (enforced in state.ts) — the
+ *   anchor the rest of the map is read against; `set: []` — clearing — is
  *   exempt. The anchor is guaranteed by validation, not prompt discipline.
  * - Options live only under their decision (guideline).
  * - Factual questions get no node type: investigate directly, ask the user in

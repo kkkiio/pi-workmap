@@ -1,5 +1,5 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { REQUIRED_HEADING_STATUS, WORKMAP_NODE_TYPES, type WorkmapNodeType } from "./node-types.js";
+import { WORKMAP_NODE_TYPES, type WorkmapNodeType } from "./node-types.js";
 import { readLatestSnapshot } from "./session-entry.js";
 import { countNodes, type WorkmapChild, type WorkmapRoot } from "./types.js";
 
@@ -47,8 +47,7 @@ export class WorkmapState {
 
 	/**
 	 * Full-map declaration: replaces everything, atomically. A non-empty set
-	 * must carry the long-term anchor heading (enforced here, not by prompt
-	 * discipline),
+	 * must carry at least one heading (enforced here, not by prompt discipline),
 	 * and capacity is a hard rejection — the Agent decides what to drop, the
 	 * mechanism never silently prunes.
 	 */
@@ -97,8 +96,8 @@ export class WorkmapState {
 			return `The map is limited to ${MAX_WORKMAP_NODES} nodes (children included) — keep the ones that matter most and re-declare`;
 		}
 		// Clearing (empty set) is exempt from the anchor requirement.
-		if (roots.length > 0 && !roots.some((root) => root.type === "heading" && root.status === REQUIRED_HEADING_STATUS)) {
-			return `A non-empty map needs a heading with status "${REQUIRED_HEADING_STATUS}" — the project-level goal this session serves.`;
+		if (roots.length > 0 && !roots.some((root) => root.type === "heading")) {
+			return "A non-empty map needs at least one heading — the anchor the rest of the map is read against.";
 		}
 		return roots;
 	}
