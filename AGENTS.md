@@ -50,6 +50,14 @@ Status labels are type-scoped; the recommended vocabulary per type lives in `src
 
 ## Policies & Mandatory Rules
 
+### Context-facing text
+
+`promptGuidelines`, tool `description` / `promptSnippet`, tool result text, the injected `<workmap-state>` message, and every other string that reaches the LLM's context are product surface, not implementation details — rewording any of them changes the product's behavior everywhere it runs.
+
+- Discuss the intended wording with the human and converge it before editing code or pushing; never batch these changes with mechanical work.
+- While such text is being refined, do not push, re-run CI, or trigger reviews on intermediate versions.
+- Behavioral changes behind the text still follow the documentation policy below.
+
 ### Compatibility and documentation
 
 - When changing runtime code during the `0.x` phase, prefer a direct schema migration over compatibility layers unless released session data would become unreadable.
