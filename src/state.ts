@@ -47,7 +47,8 @@ export class WorkmapState {
 
 	/**
 	 * Full-map declaration: replaces everything, atomically. A non-empty set
-	 * must carry the double heading (enforced here, not by prompt discipline),
+	 * must carry the long-term anchor heading (enforced here, not by prompt
+	 * discipline),
 	 * and capacity is a hard rejection — the Agent decides what to drop, the
 	 * mechanism never silently prunes.
 	 */
