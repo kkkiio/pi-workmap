@@ -11,7 +11,7 @@ export const PRESENTATION: Record<
 	WorkmapNodeType,
 	{ glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }
 > = {
-	heading: { glyph: "✦", glyphColor: "accent" },
+	goal: { glyph: "✦", glyphColor: "accent" },
 	understanding: { glyph: "•", glyphColor: "text" },
 	decision: { glyph: "◆", glyphColor: "accent" },
 	option: { glyph: "◇", glyphColor: "text" },
@@ -80,11 +80,13 @@ export class WorkmapWidget {
 			const nodes = this.getNodes();
 			if (nodes.length === 0 || width < 8) return [];
 			const lines = [theme.fg("accent", theme.bold(this.renderSummary(nodes, theme)))];
-			// Heading roots lead the tree, following the tech-doc convention that the
-			// goals section precedes the details.
+			// Goal roots lead the tree (the goals section precedes the details), and
+			// drifts sit directly below them: direction first, then the deviation,
+			// then everything else.
 			const ordered = [
-				...nodes.filter((node) => node.type === "heading"),
-				...nodes.filter((node) => node.type !== "heading"),
+				...nodes.filter((node) => node.type === "goal"),
+				...nodes.filter((node) => node.type === "drift"),
+				...nodes.filter((node) => node.type !== "goal" && node.type !== "drift"),
 			];
 			for (const root of ordered) {
 				lines.push(this.renderNode(root, "", width, theme));

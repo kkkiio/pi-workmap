@@ -16,10 +16,13 @@ export interface StateMessageMeta {
  * compaction's job.
  */
 export function renderTreeLines(roots: WorkmapRoot[]): string[] {
-	// Heading roots lead the listing: the anchor precedes the details.
+	// Goal roots lead the listing: the anchor precedes the details. Drifts come
+	// right after: the user's first question after "is the direction right" is
+	// "where did we stray", before any other detail.
 	const ordered = [
-		...roots.filter((root) => root.type === "heading"),
-		...roots.filter((root) => root.type !== "heading"),
+		...roots.filter((root) => root.type === "goal"),
+		...roots.filter((root) => root.type === "drift"),
+		...roots.filter((root) => root.type !== "goal" && root.type !== "drift"),
 	];
 	const lines: string[] = [];
 	const visit = (node: WorkmapChild, depth: number): void => {

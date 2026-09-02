@@ -10,8 +10,8 @@ import { WORKMAP_ENTRY_TYPE, WORKMAP_SNAPSHOT_VERSION, type WorkmapSnapshot } fr
 import type { WorkmapRoot } from "../src/types.js";
 
 const baseMap: WorkmapRoot[] = [
-	{ type: "heading", title: "Keep the auth layer trustworthy", status: "long-term" },
-	{ type: "heading", title: "Ship the staleness sensor", status: "current" },
+	{ type: "goal", title: "Keep the auth layer trustworthy", status: "long-term" },
+	{ type: "goal", title: "Ship the staleness sensor", status: "current" },
 ];
 
 describe("workmap extension lifecycle", () => {
@@ -19,8 +19,8 @@ describe("workmap extension lifecycle", () => {
 		const snapshot: WorkmapSnapshot = {
 			version: WORKMAP_SNAPSHOT_VERSION,
 			nodes: [
-				{ type: "heading", title: "Keep the auth layer trustworthy", status: "long-term" },
-				{ type: "heading", title: "Keep the latest session direction", status: "current" },
+				{ type: "goal", title: "Keep the auth layer trustworthy", status: "long-term" },
+				{ type: "goal", title: "Keep the latest session direction", status: "current" },
 			],
 		};
 		const sourceSession = SessionManager.inMemory();
@@ -138,13 +138,13 @@ describe("workmap extension lifecycle", () => {
 			expect(result?.message?.content).toContain("3 user prompts stale");
 		});
 
-		it("rejects a set without a long-term heading and an add_drift on an empty map", async () => {
+		it("rejects a set without a long-term goal and an add_drift on an empty map", async () => {
 			const { handlers, context, getTool } = setup();
 			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
 
 			const badSet = (await getTool("workmap").execute(
 				"call",
-				{ set: [{ type: "task", title: "No headings" }] },
+				{ set: [{ type: "task", title: "No goals" }] },
 				undefined,
 				undefined,
 				undefined,
@@ -153,7 +153,7 @@ describe("workmap extension lifecycle", () => {
 				details: { error?: string };
 			};
 			expect(badSet.isError).toBe(true);
-			expect(badSet.details.error).toContain("at least one heading");
+			expect(badSet.details.error).toContain("at least one goal");
 
 			const drift = (await getTool("add_drift").execute(
 				"call",
@@ -178,7 +178,7 @@ describe("workmap extension lifecycle", () => {
 			// A rejected set changed nothing: it must not reset the stale counter.
 			await getTool("workmap").execute(
 				"call",
-				{ set: [{ type: "task", title: "Hand-edited, no headings" }] },
+				{ set: [{ type: "task", title: "Hand-edited, no goals" }] },
 				undefined,
 				undefined,
 				undefined,

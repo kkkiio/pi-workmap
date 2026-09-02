@@ -22,18 +22,18 @@ Once the Agent starts working, a workmap stays pinned above the editor:
 Workmap · 9 signals
 ✦ Keep the auth layer trustworthy                             long-term
 ✦ Fix the flaky auth test
+⎇ The client-only fix assumes a single worker                  detected
 • Refresh requests occasionally overlap                       observed
 ◆ Where should refresh serialization live?                considering
 ├─ ◇ Serialize in the client                                  candidate
 ├─ ◇ Make refresh idempotent on the server
 └─ ◎ Compare approaches                                       active
 ◎ Reproduce the double logout (rewrote 2 fixtures)             done
-⎇ The client-only fix assumes a single worker                  detected
 ```
 
-- Every prompt, before acting, the Agent re-declares this complete map; a mid-task course change is appended on the spot via `add_drift`.
+- Every prompt, before acting, the Agent re-declares this complete map; a mid-task course change is reported on the spot via `add_drift`, rendered directly below the goals.
 - Something looks off? Say so in conversation — the Agent updates the map and its course.
-- Hard limits, enforced by rejection: at most 10 signals, every map anchored by at least one heading.
+- Hard limits, enforced by rejection: at most 10 signals, every map anchored by at least one goal.
 
 ## Session behavior
 

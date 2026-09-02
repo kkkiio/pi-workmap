@@ -28,7 +28,7 @@ Human inspects and corrects through conversation
 
 Map 不是全部 shared understanding。稳定的背景知识、能直接查到的事实不上去；只有**承重信息**上去——如果它错了，工作就会跑偏：
 
-- 方向：Heading（想去哪）；
+- 方向：Goal（用户最终想去哪）；
 - 承诺与权衡：Decision / Option（凭什么走这条路）；
 - 反直觉的发现：Understanding（不写下来就会忘的）；
 - 行动账本：Task（打算做、正在做、已做及其副作用）；

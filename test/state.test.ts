@@ -4,12 +4,12 @@ import { WORKMAP_ENTRY_TYPE, WORKMAP_SNAPSHOT_VERSION, type WorkmapSnapshot } fr
 import { MAX_WORKMAP_NODES, WorkmapState } from "../src/state.js";
 import type { WorkmapRoot } from "../src/types.js";
 
-const currentHeading: WorkmapRoot = { type: "heading", title: "Stop random logouts", status: "current" };
-const longTermHeading: WorkmapRoot = { type: "heading", title: "Keep the auth layer trustworthy", status: "long-term" };
+const currentGoal: WorkmapRoot = { type: "goal", title: "Stop random logouts", status: "current" };
+const longTermGoal: WorkmapRoot = { type: "goal", title: "Keep the auth layer trustworthy", status: "long-term" };
 
-/** A valid two-heading base map, ready for extras. */
+/** A valid two-goal base map, ready for extras. */
 function baseMap(): WorkmapRoot[] {
-	return [longTermHeading, { ...currentHeading }];
+	return [longTermGoal, { ...currentGoal }];
 }
 
 function tree(title: string, childCount = 0): WorkmapRoot {
@@ -53,12 +53,12 @@ describe("WorkmapState.set", () => {
 		const state = new WorkmapState();
 		expect(state.set(baseMap())).toEqual({ changed: true });
 
-		expect(state.set([longTermHeading, { ...currentHeading, title: "Fix the flaky auth test" }])).toEqual({
+		expect(state.set([longTermGoal, { ...currentGoal, title: "Fix the flaky auth test" }])).toEqual({
 			changed: true,
 		});
 		expect(state.list()).toEqual([
-			longTermHeading,
-			{ type: "heading", title: "Fix the flaky auth test", status: "current" },
+			longTermGoal,
+			{ type: "goal", title: "Fix the flaky auth test", status: "current" },
 		]);
 	});
 
@@ -76,14 +76,14 @@ describe("WorkmapState.set", () => {
 		expect(state.set([])).toEqual({ changed: false });
 	});
 
-	it("rejects a non-empty map without any heading", () => {
+	it("rejects a non-empty map without any goal", () => {
 		const state = new WorkmapState();
-		const expected = "A non-empty map needs at least one heading — the anchor the rest of the map is read against.";
-		expect(state.set([{ type: "task", title: "No heading here" }]).error).toBe(expected);
+		const expected = "A non-empty map needs at least one goal — the anchor the rest of the map is read against.";
+		expect(state.set([{ type: "task", title: "No goal here" }]).error).toBe(expected);
 
-		// Any heading anchors the map; the long-term label is optional.
-		expect(state.set([{ ...currentHeading }])).toEqual({ changed: true });
-		expect(state.set([longTermHeading])).toEqual({ changed: true });
+		// Any goal anchors the map; the long-term label is optional.
+		expect(state.set([{ ...currentGoal }])).toEqual({ changed: true });
+		expect(state.set([longTermGoal])).toEqual({ changed: true });
 	});
 
 	it("rejects over-capacity maps instead of evicting", () => {
@@ -97,26 +97,26 @@ describe("WorkmapState.set", () => {
 	it("rejects nesting deeper than two levels", () => {
 		const state = new WorkmapState();
 		const deep = {
-			...currentHeading,
+			...currentGoal,
 			title: "Deep",
 			children: [{ type: "task", title: "Child", children: [{ type: "task", title: "Grandchild" }] }],
 		} as WorkmapRoot;
-		expect(state.set([longTermHeading, deep]).error).toContain("nesting deeper than 2 levels");
+		expect(state.set([longTermGoal, deep]).error).toContain("nesting deeper than 2 levels");
 	});
 
 	it("rejects invalid nodes without changing state", () => {
 		const state = new WorkmapState();
 		state.set(baseMap());
-		expect(state.set([longTermHeading, { ...currentHeading, type: "nonsense" as never }]).error).toContain(
+		expect(state.set([longTermGoal, { ...currentGoal, type: "nonsense" as never }]).error).toContain(
 			"invalid node type",
 		);
-		expect(state.set([longTermHeading, { ...currentHeading, title: "" }]).error).toContain("invalid title");
+		expect(state.set([longTermGoal, { ...currentGoal, title: "" }]).error).toContain("invalid title");
 		expect(state.list()).toEqual(baseMap());
 	});
 
 	it("sanitizes control characters and drops empty children", () => {
 		const state = new WorkmapState();
-		state.set([longTermHeading, { ...currentHeading, title: "Fix\tthe  flaky\nauth test", children: [] }]);
+		state.set([longTermGoal, { ...currentGoal, title: "Fix\tthe  flaky\nauth test", children: [] }]);
 		expect(state.list()[1]?.title).toBe("Fix the flaky auth test");
 		expect(state.list()[1]?.children).toBeUndefined();
 	});
@@ -187,14 +187,14 @@ describe("WorkmapState.restore", () => {
 	it("falls back to the previous snapshot when the newest is semantically invalid", () => {
 		const state = new WorkmapState();
 		state.restore(
-			sessionWith([snapshotEntry(baseMap()), snapshotEntry([{ type: "task", title: "Hand-edited, no headings" }])]),
+			sessionWith([snapshotEntry(baseMap()), snapshotEntry([{ type: "task", title: "Hand-edited, no goals" }])]),
 		);
 		expect(state.list()).toEqual(baseMap());
 	});
 
 	it("skips snapshots with malformed nodes instead of crashing", () => {
 		const state = new WorkmapState();
-		state.restore(sessionWith([snapshotEntry([null, currentHeading])]));
+		state.restore(sessionWith([snapshotEntry([null, currentGoal])]));
 		expect(state.list()).toEqual([]);
 	});
 
@@ -206,7 +206,7 @@ describe("WorkmapState.restore", () => {
 
 	it("skips snapshots violating the long-term anchor", () => {
 		const state = new WorkmapState();
-		state.restore(sessionWith([snapshotEntry([{ type: "task", title: "No heading here" }])]));
+		state.restore(sessionWith([snapshotEntry([{ type: "task", title: "No goal here" }])]));
 		expect(state.list()).toEqual([]);
 	});
 

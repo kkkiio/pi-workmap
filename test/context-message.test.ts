@@ -3,7 +3,7 @@ import { renderStateMessage, renderTreeLines } from "../src/context-message.js";
 import type { WorkmapRoot } from "../src/types.js";
 
 const nodes: WorkmapRoot[] = [
-	{ type: "heading", title: "Keep users signed in reliably", status: "current" },
+	{ type: "goal", title: "Keep users signed in reliably", status: "current" },
 	{
 		type: "decision",
 		title: "Refresh serialization ownership",
@@ -20,7 +20,7 @@ describe("renderStateMessage", () => {
 	const output = renderStateMessage(nodes, { promptsSinceRewrite: 0 });
 
 	it("renders a scannable tree-ordered listing with statuses", () => {
-		expect(output).toContain("heading [current]: Keep users signed in reliably");
+		expect(output).toContain("goal [current]: Keep users signed in reliably");
 		expect(output).toContain("decision [considering]: Refresh serialization ownership");
 		expect(output).toContain("  option: Serialize in the client");
 		expect(output).toContain("  option [preferred]: Make refresh idempotent on the server");
@@ -56,9 +56,9 @@ describe("renderStateMessage", () => {
 });
 
 describe("renderTreeLines", () => {
-	it("leads with heading roots and indents children", () => {
+	it("leads with goal roots and indents children", () => {
 		const lines = renderTreeLines(nodes);
-		expect(lines[0]).toContain("heading");
+		expect(lines[0]).toContain("goal");
 		expect(lines.find((line) => line.includes("Serialize in the client"))?.startsWith("  option:")).toBe(true);
 	});
 });

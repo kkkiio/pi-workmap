@@ -5,7 +5,7 @@ import type { WorkmapRoot } from "../src/types.js";
 import { WorkmapWidget } from "../src/widget.js";
 
 const nodes: WorkmapRoot[] = [
-	{ type: "heading", title: "Keep human and Agent aligned", status: "long-term" },
+	{ type: "goal", title: "Keep human and Agent aligned", status: "long-term" },
 	{
 		type: "decision",
 		title: "Use session-global snapshots",
