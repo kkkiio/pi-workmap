@@ -40,7 +40,7 @@ widget 最多 10 个节点，容量本身就是筛选器：写不进去的东西
 
 - **Intent before action**：map 的首要读者动作是"动手前看一眼"，其次是执行中的持续对齐。
 - **Current, not historical**：只保留仍影响当前方向的信息；map 是声明视图，不是日志或档案。
-- **Regenerated, not accumulated**：每个 user prompt 全量重写，陈旧机制（增量寻址、staleness 计数）不存在。
+- **Regenerated, not accumulated**: 每 user prompt 全量重写，增量寻址已不存在。漏掉重写时由 prompt 级 stale 计数 + 升级提醒兜底（turn 级计数已删）。
 - **Agent-maintained**：Agent 声明，Human 通过对话纠正。
 - **Human-readable**：优化一眼扫读，而不是完整表达所有机器关系。
 - **Restrained**：widget 只渲染结构，解释性内容住在对话里。
