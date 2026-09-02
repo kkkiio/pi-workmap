@@ -116,7 +116,12 @@ describe("workmap extension lifecycle", () => {
 			const staler = await beforeAgentStart(handlers, context);
 			expect(staler?.message?.content).toContain("3 user prompts stale");
 
-			// A re-declaration re-anchors the map.
+			// add_drift is an append, not a rewrite: it must not re-anchor the map.
+			await getTool("add_drift").execute("call", { title: "Off course" }, undefined, undefined, undefined);
+			const afterDrift = await beforeAgentStart(handlers, context);
+			expect(afterDrift?.message?.content).toContain("4 user prompts stale");
+
+			// Only a full re-declaration re-anchors the map.
 			await set(baseMap);
 			const reasserted = await beforeAgentStart(handlers, context);
 			expect(reasserted?.message?.content).not.toContain("user prompts stale");

@@ -164,7 +164,8 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		parameters: AddDriftParams,
 		executionMode: "sequential",
 		async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-			promptsSinceRewrite = 0;
+			// A drift is an append, not a rewrite: the counter keeps counting until a
+			// full workmap declaration re-anchors the map.
 			const result = state.addDrift((params as { title: string }).title);
 			widget.update();
 			return finish("add", result);
