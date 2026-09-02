@@ -11,19 +11,25 @@ export interface StateMessageMeta {
 }
 
 /**
+ * Display order for roots: goal leads (the anchor precedes the details), drift
+ * comes right after (the user's first question after "is the direction right"
+ * is "where did we stray"), the rest keeps insertion order.
+ */
+export function orderedRoots(roots: WorkmapRoot[]): WorkmapRoot[] {
+	return [
+		...roots.filter((root) => root.type === "goal"),
+		...roots.filter((root) => root.type === "drift"),
+		...roots.filter((root) => root.type !== "goal" && root.type !== "drift"),
+	];
+}
+
+/**
  * Render trees as a scannable indented listing. Notes and rationale stay out:
  * the model already knows its own reasoning, and durable context is
  * compaction's job.
  */
 export function renderTreeLines(roots: WorkmapRoot[]): string[] {
-	// Goal roots lead the listing: the anchor precedes the details. Drifts come
-	// right after: the user's first question after "is the direction right" is
-	// "where did we stray", before any other detail.
-	const ordered = [
-		...roots.filter((root) => root.type === "goal"),
-		...roots.filter((root) => root.type === "drift"),
-		...roots.filter((root) => root.type !== "goal" && root.type !== "drift"),
-	];
+	const ordered = orderedRoots(roots);
 	const lines: string[] = [];
 	const visit = (node: WorkmapChild, depth: number): void => {
 		const status = node.status ? ` [${node.status}]` : "";

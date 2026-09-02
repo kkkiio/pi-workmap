@@ -117,7 +117,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			: `${changed ? "Updated" : "No change to"} workmap · ${total} signal${total === 1 ? "" : "s"}${
 					current.length > 0 ? `\n${treeText}` : ""
 				}`;
-		const details: WorkmapToolDetails = { version: 4, action, changed, ...(error ? { error } : {}), nodes: current };
+		const details: WorkmapToolDetails = { version: 5, action, changed, ...(error ? { error } : {}), nodes: current };
 		return { content: [{ type: "text", text }], details, isError: Boolean(error) };
 	};
 

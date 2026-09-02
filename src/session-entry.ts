@@ -66,7 +66,7 @@ export function readLatestSnapshot(
 		// Guard before trusting the array: a malformed node (e.g. null) must skip
 		// the snapshot, not crash session start.
 		if (data.nodes.some((node) => !node || typeof node !== "object")) continue;
-		const nodes = version === 4 ? migrateV4(data.nodes as WorkmapRoot[]) : (data.nodes as WorkmapRoot[]);
+		const nodes = version === 4 ? migrateV4Nodes(data.nodes as WorkmapRoot[]) : (data.nodes as WorkmapRoot[]);
 		if (!isValid(nodes)) continue;
 		return nodes;
 	}
@@ -74,7 +74,7 @@ export function readLatestSnapshot(
 }
 
 /** Version 4 → 5: the `heading` node type was renamed to `goal` (ADR 0008 channel). */
-function migrateV4(nodes: WorkmapRoot[]): WorkmapRoot[] {
+export function migrateV4Nodes(nodes: WorkmapRoot[]): WorkmapRoot[] {
 	const remap = (node: WorkmapRoot): WorkmapRoot => ({
 		...node,
 		type: (node.type as string) === "heading" ? "goal" : node.type,

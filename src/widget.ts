@@ -1,5 +1,6 @@
 import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
+import { orderedRoots } from "./context-message.js";
 import type { WorkmapNodeType } from "./node-types.js";
 import { countNodes, type WorkmapChild, type WorkmapRoot } from "./types.js";
 
@@ -80,14 +81,7 @@ export class WorkmapWidget {
 			const nodes = this.getNodes();
 			if (nodes.length === 0 || width < 8) return [];
 			const lines = [theme.fg("accent", theme.bold(this.renderSummary(nodes, theme)))];
-			// Goal roots lead the tree (the goals section precedes the details), and
-			// drifts sit directly below them: direction first, then the deviation,
-			// then everything else.
-			const ordered = [
-				...nodes.filter((node) => node.type === "goal"),
-				...nodes.filter((node) => node.type === "drift"),
-				...nodes.filter((node) => node.type !== "goal" && node.type !== "drift"),
-			];
+			const ordered = orderedRoots(nodes);
 			for (const root of ordered) {
 				lines.push(this.renderNode(root, "", width, theme));
 				const children = root.children ?? [];
