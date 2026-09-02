@@ -46,7 +46,7 @@ Keep session semantics in `src/state.ts`, presentation in `src/widget.ts`, and P
 - **Task** — An action the Agent declares it intends, is doing, or has done; a `done` title records side effects (what changed, what ran), serving as the map's recent behavior ledger. One level of children expresses supporting structure only, never execution tracking (dependencies, progress rollups, or completion archives). Factual questions get no node type: investigate directly, or ask the user in conversation when only they can answer.
 - **Drift** — A detected mismatch between the Agent's direction and user intent or the declared workmap.
 
-Status labels are type-scoped; the recommended vocabulary per type lives in `src/node-types.ts` (heading: current/long-term; decision: considering/chosen; understanding: hypothesis; task: pending/active/done). The map is capped at 10 nodes (children included); a non-empty map must carry a `current` and a `long-term` heading — violations and over-capacity sets are rejected whole, never silently pruned (ADR 0015).
+Status labels are type-scoped; the recommended vocabulary per type lives in `src/node-types.ts` (heading: long-term required on the anchor, unlabeled reads as the current focus; decision: considering/chosen; understanding: hypothesis; task: pending/active/done). The map is capped at 10 nodes (children included); a non-empty map must carry a `long-term` heading — violations and over-capacity sets are rejected whole, never silently pruned (ADR 0015).
 
 ## Policies & Mandatory Rules
 

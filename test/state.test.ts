@@ -76,14 +76,16 @@ describe("WorkmapState.set", () => {
 		expect(state.set([])).toEqual({ changed: false });
 	});
 
-	it("rejects a non-empty map without both headings", () => {
+	it("rejects a non-empty map without a long-term heading", () => {
 		const state = new WorkmapState();
-		expect(state.set([{ ...currentHeading }]).error).toContain("long-term heading");
-		expect(state.set([longTermHeading]).error).toContain("current heading");
-		expect(state.set([{ ...longTermHeading, type: "task", title: "Not a heading" }, { ...currentHeading }]).error).toBe(
-			"A non-empty map needs a long-term heading",
-		);
-		expect(state.list()).toEqual([]);
+		const expected =
+			'A non-empty map needs a heading with status "long-term" — the project-level goal this session serves.';
+		expect(state.set([{ ...currentHeading }]).error).toBe(expected);
+
+		// A single long-term heading is a valid map on its own.
+		expect(state.set([longTermHeading])).toEqual({ changed: true });
+		expect(state.set([{ ...longTermHeading, type: "task", title: "Not a heading" }]).error).toBe(expected);
+		expect(state.list()).toEqual([longTermHeading]);
 	});
 
 	it("rejects over-capacity maps instead of evicting", () => {
@@ -204,7 +206,7 @@ describe("WorkmapState.restore", () => {
 		expect(state.list()).toEqual([]);
 	});
 
-	it("skips snapshots violating the double heading", () => {
+	it("skips snapshots violating the long-term anchor", () => {
 		const state = new WorkmapState();
 		state.restore(sessionWith([snapshotEntry([{ type: "task", title: "No heading here" }])]));
 		expect(state.list()).toEqual([]);

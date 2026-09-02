@@ -53,18 +53,15 @@ export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
  * Recommended status vocabulary per type. `status` itself stays a free-form
  * display annotation — no state machine (ADR 0003). The lists exist so
  * guidelines, schema descriptions, and any future validation share one source;
- * only the heading statuses are semantically load-bearing (the double-heading
- * validation below reads them), the rest keep wording from drifting.
+ * only REQUIRED_HEADING_STATUS is semantically load-bearing, the rest keep
+ * wording from drifting.
  */
-export const HEADING_STATUSES = ["current", "long-term"] as const;
+export const REQUIRED_HEADING_STATUS = "long-term";
 export const DECISION_STATUSES = ["considering", "chosen"] as const;
 export const UNDERSTANDING_STATUSES = ["observed", "inferred", "hypothesis"] as const;
 export const TASK_STATUSES = ["pending", "active", "done"] as const;
 export const OPTION_STATUSES = ["candidate"] as const;
 export const DRIFT_STATUSES = ["detected"] as const;
-
-/** The heading statuses validation requires on every non-empty map. */
-export const REQUIRED_HEADING_STATUSES: readonly ["current", "long-term"] = HEADING_STATUSES;
 
 /**
  * Type invariants. Enforced where noted; otherwise taught in promptGuidelines.

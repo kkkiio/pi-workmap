@@ -1,5 +1,5 @@
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { REQUIRED_HEADING_STATUSES, WORKMAP_NODE_TYPES, type WorkmapNodeType } from "./node-types.js";
+import { REQUIRED_HEADING_STATUS, WORKMAP_NODE_TYPES, type WorkmapNodeType } from "./node-types.js";
 import { readLatestSnapshot } from "./session-entry.js";
 import { countNodes, type WorkmapChild, type WorkmapRoot } from "./types.js";
 
@@ -95,12 +95,9 @@ export class WorkmapState {
 		if (countNodes(roots) > MAX_WORKMAP_NODES) {
 			return `The map is limited to ${MAX_WORKMAP_NODES} nodes (children included) — keep the ones that matter most and re-declare`;
 		}
-		if (roots.length > 0) {
-			for (const status of REQUIRED_HEADING_STATUSES) {
-				if (!roots.some((root) => root.type === "heading" && root.status === status)) {
-					return `A non-empty map needs a ${status} heading`;
-				}
-			}
+		// Clearing (empty set) is exempt from the anchor requirement.
+		if (roots.length > 0 && !roots.some((root) => root.type === "heading" && root.status === REQUIRED_HEADING_STATUS)) {
+			return `A non-empty map needs a heading with status "${REQUIRED_HEADING_STATUS}" — the project-level goal this session serves.`;
 		}
 		return roots;
 	}

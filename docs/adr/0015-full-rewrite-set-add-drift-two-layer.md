@@ -18,7 +18,7 @@
 2. **`workmap` 工具只剩一个动作 `set`**：参数即完整 map，原子替换；`set: []` 清空；缺 `set` 键拒绝（防误触清空）。`view` 删除（tool 回声 + 每 run 注入已含全图）。
 3. **专用 `add_drift` 工具**：参数只剩 `title`，type 固定 drift、status 自动 `detected`；空 map 拒绝（非空 map 必须有双 heading），容量照拒。工具名即引导：mid-loop 唯一真实的追加场景就是换方案时的 drift。
 4. **两层结构**：root + 一层 children；`MAX_WORKMAP_DEPTH = 2`。root 不携带 id；快照 v4 删除 `updatedAt`（无驱逐则无树龄）。
-5. **容量与 heading 走校验拒绝**：10 节点（含 children 递归计数，widget 高度契约不变）与非空 map 双 heading（≥1 current + ≥1 long-term）由 state 校验强制；违规整次拒绝，永不静默修剪。MUST 从 prompt 收编进代码。
+5. **容量与 heading 走校验拒绝**：10 节点（含 children 递归计数，widget 高度契约不变）与非空 map 的 long-term anchor heading（无标签 heading 即当前焦点）由 state 校验强制，错误信息可一步修复；违规整次拒绝，永不静默修剪。MUST 从 prompt 收编进代码。
 6. **staleness 传感器以 prompt 为单位回归**：每 run 注入快照携带"距上次 workmap 调用的 prompt 数"，≥2 时 footer 升级为点名提醒。MUST 降低遗忘概率但不能消灭它；计数使遗忘对模型可见。评估过硬机制（`before_provider_request` 强设 `tool_choice`）：payload 为 provider 各异的 opaque 结构，且强逼出的重写没有真实模型注意力，放弃。
 7. **task 词表 `pending / active / done`**：pending 是"动手前"的纠偏窗口；done 的 title 记录副作用（改了什么、跑了什么），近期保留在图上作为行为账本。
 

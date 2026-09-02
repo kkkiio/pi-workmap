@@ -138,7 +138,7 @@ describe("workmap extension lifecycle", () => {
 			expect(result?.message?.content).toContain("3 user prompts stale");
 		});
 
-		it("rejects a set without the double heading and an add_drift on an empty map", async () => {
+		it("rejects a set without a long-term heading and an add_drift on an empty map", async () => {
 			const { handlers, context, getTool } = setup();
 			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
 
@@ -153,7 +153,7 @@ describe("workmap extension lifecycle", () => {
 				details: { error?: string };
 			};
 			expect(badSet.isError).toBe(true);
-			expect(badSet.details.error).toContain("needs a current heading");
+			expect(badSet.details.error).toContain('status "long-term"');
 
 			const drift = (await getTool("add_drift").execute(
 				"call",

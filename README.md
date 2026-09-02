@@ -16,7 +16,24 @@ pi install .
 
 ## Usage
 
-On every user prompt, before its first action, the Agent re-declares the complete map via the `workmap` tool — what you see is everything the Agent has declared; if a rewrite slips, the injected snapshot escalates until it happens. Mid-task course changes are reported the moment they happen through `add_drift`. A non-empty map always carries a `current` heading (where the user just pointed) and a `long-term` heading (the project-level direction this session serves); updates that exceed 10 signals or drop a heading are rejected whole, so what reaches the widget is always a map the Agent explicitly chose.
+Once the Agent starts working, a workmap stays pinned above the editor:
+
+```text
+Workmap · 9 signals
+✦ Keep the auth layer trustworthy                             long-term
+✦ Fix the flaky auth test
+• Refresh requests occasionally overlap                       observed
+◆ Where should refresh serialization live?                considering
+├─ ◇ Serialize in the client                                  candidate
+├─ ◇ Make refresh idempotent on the server
+└─ ◎ Compare approaches                                       active
+◎ Reproduce the double logout (rewrote 2 fixtures)             done
+⎇ The client-only fix assumes a single worker                  detected
+```
+
+- Every prompt, before acting, the Agent re-declares this complete map; a mid-task course change is appended on the spot via `add_drift`.
+- Something looks off? Say so in conversation — the Agent updates the map and its course.
+- Hard limits, enforced by rejection: at most 10 signals, every map anchored by a `long-term` heading.
 
 ## Session behavior
 
