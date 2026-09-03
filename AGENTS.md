@@ -9,6 +9,9 @@
 ├── AGENTS.md                         # Repository-wide developer-agent rules
 ├── README.md                         # User-facing installation and usage
 ├── package.json                      # Pi package manifest and development commands
+├── .github/workflows/
+│   ├── ci.yml                        # Lint/typecheck/test/build on pushes and PRs to main
+│   └── codex-review.yml              # PR merge gate: pass requires a Codex review signal at current HEAD and no unresolved review threads
 ├── src/
 │   ├── index.ts                      # Extension lifecycle, tools, and state message injection
 │   ├── node-types.ts                 # Node type semantics, per-type status vocabulary, invariants
