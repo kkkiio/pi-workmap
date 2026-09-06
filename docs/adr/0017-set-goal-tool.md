@@ -18,17 +18,17 @@
 5. **容量**：roots ≤ 8、children ≤ 4 与总节点 ≤10 兜底只计 nodes；header 不计。`set: []` 清 signals 不清 goal（独立槽位）。
 6. **无机械保证模型何时 `set_goal`**——guideline 引导 + 无 goal 时 header 缺席可见。观察，不立法（ADR 0015 的措辞层纪律）。
 
-### Guidelines（定稿措辞）
+### Guidelines（定稿措辞，2026-09-06 收缩）
 
-1. You MUST re-declare the complete signal map via the `workmap` tool before your first action after every user prompt; an empty nodes array clears the map.
-2. You MUST distill the user's ultimate want into the goal via `set_goal` before acting on a new or changed request — the destination, never the route; update it only when your reading of their intent deepens or the user corrects direction; it renders as the map header and outlives signal rewrites.
-3. You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When the mismatch resolves, record any lasting conclusion as a decision or understanding, then drop the drift in your next rewrite.
-4. Use decision for deliberation or commitments: title it as a question while deliberating, and once decided append the conclusion, e.g. 'Where should X live? → on the server', keeping the question for context; label considering while open, chosen once settled.
-5. Use option only for considered alternatives under their decision.
-6. Use understanding for current facts, syntheses, and hypotheses; label marks verification level — confirmed/inferred for established ground, hypothesis for an unverified premise. Counterintuitive findings belong here precisely because they are easy to lose.
-7. Use task for actions you intend, are doing, or have done; label pending, active, or done. A done title records side effects — what changed, what ran.
+> 收缩：set_goal 条删（语义由 tool description 全承载，ADR 0014 的重复承载删除）；label 词例移入 schema description；decision/option 合并；understanding 词表定为 confirmed/assumed（inferred 零自发使用，信任判断是二元的：verified vs assumed）。
 
-动词选择：**distill，不是 guess**。观测到的失败是"够不着"（从字面复制请求），不是"猜太满"——distill 断言终极意图已在用户的话里、指向挖掘；guess 给偷懒许可（浅猜也算完成，不确定时干脆跳过）。可证伪性不需要动词承载：reading 可能错，由产品结构的纠正通道兜底（"best present reading — a falsifiable paraphrase"）。若出现"假装蒸馏"（编造用户没说的意图）这一新失败模式，第一顺位修法是 description 加 "grounded in what the user actually said"，不是换动词。
+1. You MUST re-declare the complete signal map via the `workmap` tool before your first action after every user prompt; an empty array clears the signals.
+2. You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When it resolves, record any lasting conclusion as a decision or understanding and drop the drift in your next rewrite.
+3. Use decision for deliberation or commitments — title a question while deliberating, and once decided append the conclusion ("Where should X live? → on the server"); use option only for considered alternatives under their decision.
+4. Use understanding for current facts, syntheses, and hypotheses; counterintuitive findings belong here precisely because they are easy to lose — label assumed until verified.
+5. Use task for actions you intend, are doing, or have done; a done title records side effects — what changed, what ran.
+
+动词选择：**distill，不是 guess**。观测到的失败是"够不着"（从字面复制请求），不是"猜太满"——distill 断言终极意图已在用户的话里、指向挖掘；guess 给偷懒许可（浅猜也算完成，不确定时干脆跳过）。可证伪性不需要动词承载：reading 可能错，由产品结构的纠正通道兜底（"best present reading — a falsifiable paraphrase"）。若出现"假装蒸馏"（编造用户没说的意图）这一新失败模式，第一顺位修法是 description 加 "grounded in what the user actually said"，不是换动词。distill 的时机与语义由 set_goal 的 tool description 全量承载（"Distill the user's ultimate want — the destination, never the route; renders as the map header and outlives signal rewrites. Call it when acting on a new or changed request, and when your reading of the intent deepens or the user corrects direction."）
 
 ## Consequences
 

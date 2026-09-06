@@ -18,7 +18,7 @@ const signalFields = {
 	label: Type.Optional(
 		Type.String({
 			description:
-				"Optional restrained right-side label. decision: considering/chosen; understanding: confirmed/inferred/hypothesis; task: pending/active/done",
+				"Optional restrained right-side label. decision: considering/chosen; understanding: confirmed/assumed; task: pending/active/done",
 			maxLength: 24,
 		}),
 	),
@@ -163,12 +163,10 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
 			"You MUST re-declare the complete signal map via the `workmap` tool before your first action after every user prompt; an empty array clears the signals.",
-			"You MUST distill the user's ultimate want into the goal via `set_goal` before acting on a new or changed request — the destination, never the route; update it only when your reading of their intent deepens or the user corrects direction; it renders as the map header and outlives signal rewrites.",
-			"You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When the mismatch resolves, record any lasting conclusion as a decision or understanding, then drop the drift in your next rewrite.",
-			"Use decision for deliberation or commitments: title it as a question while deliberating, and once decided append the conclusion, e.g. 'Where should X live? → on the server', keeping the question for context; label considering while open, chosen once settled.",
-			"Use option only for considered alternatives under their decision.",
-			"Use understanding for current facts, syntheses, and hypotheses; label marks verification level — confirmed/inferred for established ground, hypothesis for an unverified premise. Counterintuitive findings belong here precisely because they are easy to lose.",
-			"Use task for actions you intend, are doing, or have done; label pending, active, or done. A done title records side effects — what changed, what ran.",
+			"You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When it resolves, record any lasting conclusion as a decision or understanding and drop the drift in your next rewrite.",
+			'Use decision for deliberation or commitments — title a question while deliberating, and once decided append the conclusion ("Where should X live? → on the server"); use option only for considered alternatives under their decision.',
+			"Use understanding for current facts, syntheses, and hypotheses; counterintuitive findings belong here precisely because they are easy to lose — label assumed until verified.",
+			"Use task for actions you intend, are doing, or have done; a done title records side effects — what changed, what ran.",
 		],
 		parameters: SetParams,
 		executionMode: "sequential",

@@ -17,8 +17,8 @@
 export const WORKMAP_NODE_TYPES = [
 	// A fact, synthesis, inference, or hypothesis the Agent currently uses.
 	// Counterintuitive findings belong here precisely because they are easy to
-	// lose; the label marks verification level — confirmed/inferred for
-	// established ground, hypothesis for an unverified premise.
+	// lose; the label marks verification level — confirmed for
+	// established ground, assumed for an unverified premise.
 	"understanding",
 	// A choice being deliberated or already made. While deliberating the title
 	// is a question; once decided the conclusion is appended ("…? → result"),
@@ -55,10 +55,10 @@ export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
  * schema descriptions and guidelines, and is adjusted when it drifts. The
  * lists exist so guidelines and schema descriptions share one source.
  * understanding's ladder follows the model prior the session data exposed:
- * models mark verification level, confirmed >> hypothesis.
+ * models mark verification level, confirmed >> everything else; inferred was deleted (zero organic uses — the trust judgment is binary: verified vs assumed).
  */
 export const DECISION_LABELS = ["considering", "chosen"] as const;
-export const UNDERSTANDING_LABELS = ["confirmed", "inferred", "hypothesis"] as const;
+export const UNDERSTANDING_LABELS = ["confirmed", "assumed"] as const;
 export const TASK_LABELS = ["pending", "active", "done"] as const;
 
 /**
