@@ -6,7 +6,7 @@ LLM Agent 被后训练成长时间自主执行。交互使用时，它往往先�
 
 用户需要在它动手之前知道它想做什么、为什么选这个方案。
 
-`pi-workmap` 让 Agent 把当前 operational mental model 声明成一张常驻、可扫读的 map，并在每个 user prompt 全量重写：
+`pi-workmap` 让 Agent 把当前 operational mental model 声明成一张常驻、可扫读的 map，以 `set_goal` 独立声明目标，并在每个 user prompt 用 `restate` 全量重写其余信号：
 
 ```text
 Agent internal reasoning
@@ -34,13 +34,13 @@ Map 不是全部 shared understanding。稳定的背景知识、能直接查到�
 - 行动账本：Task（打算做、正在做、已做及其副作用）；
 - 偏差：Drift（已察觉方向不对）。
 
-widget 最多 10 个节点，容量本身就是筛选器：写不进去的东西，要么不重要，要么属于对话或代码。
+widget 最多 10 个信号（含 goal 和 children），容量本身就是筛选器：写不进去的东西，要么不重要，要么属于对话或代码。
 
 ## 设计原则
 
 - **Intent before action**：map 的首要读者动作是"动手前看一眼"，其次是执行中的持续对齐。
 - **Current, not historical**：只保留仍影响当前方向的信息；map 是声明视图，不是日志或档案。
-- **Regenerated, not accumulated**: 每 user prompt 全量重写，增量寻址已不存在。漏掉重写时由 prompt 级 stale 计数 + 升级提醒兜底（turn 级计数已删）。
+- **Regenerated, not accumulated**: 每 user prompt 全量重写 signals；goal 由独立通道维护，意图理解变化或加深时更新。每轮注入当前状态。
 - **Agent-maintained**：Agent 声明，Human 通过对话纠正。
 - **Human-readable**：优化一眼扫读，而不是完整表达所有机器关系。
 - **Restrained**：widget 只渲染结构，解释性内容住在对话里。

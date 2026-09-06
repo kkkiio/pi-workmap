@@ -2,190 +2,144 @@ import {
 	type ExtensionAPI,
 	type ExtensionContext,
 	SessionManager,
-	type SessionStartEvent,
+	type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
 import workmapExtension from "../src/index.js";
-import { WORKMAP_ENTRY_TYPE, WORKMAP_SNAPSHOT_VERSION, type WorkmapSnapshot } from "../src/session-entry.js";
-import type { WorkmapRoot } from "../src/types.js";
+import { WORKMAP_ENTRY_TYPE, WORKMAP_SNAPSHOT_VERSION } from "../src/session-entry.js";
+import type { WorkmapToolDetails } from "../src/types.js";
 
-const baseMap: WorkmapRoot[] = [
-	{ type: "goal", title: "Keep the auth layer trustworthy", status: "long-term" },
-	{ type: "goal", title: "Ship the staleness sensor", status: "current" },
-];
+type Handler = (event: unknown, context: ExtensionContext) => Promise<unknown> | unknown;
 
-describe("workmap extension lifecycle", () => {
-	it("inherits the session-global workmap when a fork omits the latest branch", async () => {
-		const snapshot: WorkmapSnapshot = {
-			version: WORKMAP_SNAPSHOT_VERSION,
-			nodes: [
-				{ type: "goal", title: "Keep the auth layer trustworthy", status: "long-term" },
-				{ type: "goal", title: "Keep the latest session direction", status: "current" },
-			],
-		};
-		const sourceSession = SessionManager.inMemory();
-		sourceSession.appendCustomEntry(WORKMAP_ENTRY_TYPE, snapshot);
-		const forkedSession = SessionManager.inMemory();
-		const appendEntry = vi.fn();
-		let sessionStart: ((event: SessionStartEvent, context: ExtensionContext) => Promise<unknown> | unknown) | undefined;
-		const pi = {
-			on: vi.fn((event: string, handler: unknown) => {
-				if (event === "session_start") sessionStart = handler as typeof sessionStart;
-			}),
-			appendEntry,
-			registerTool: vi.fn(),
-		} as unknown as ExtensionAPI;
-		workmapExtension(pi);
-		const open = vi.spyOn(SessionManager, "open").mockReturnValue(sourceSession);
-		const context = {
-			sessionManager: forkedSession,
-			ui: { setWidget: vi.fn() },
-		} as unknown as ExtensionContext;
+function setup(sessionManager = SessionManager.inMemory()) {
+	const handlers = new Map<string, Handler>();
+	const tools = new Map<string, ToolDefinition>();
+	const appendEntry = vi.fn((customType: string, data: unknown) => sessionManager.appendCustomEntry(customType, data));
+	const pi = {
+		on: (event: string, handler: Handler) => handlers.set(event, handler),
+		appendEntry,
+		registerTool: (tool: ToolDefinition) => tools.set(tool.name, tool),
+	} as unknown as ExtensionAPI;
+	workmapExtension(pi);
+	const context = { sessionManager, ui: { setWidget: vi.fn() } } as unknown as ExtensionContext;
+	return {
+		tools,
+		appendEntry,
+		sessionManager,
+		event: async (name: string, event: unknown = { type: name }) => handlers.get(name)?.(event, context),
+		call: async (name: string, params: unknown) => {
+			const tool = tools.get(name);
+			if (!tool) throw new Error(`Missing tool: ${name}`);
+			return tool.execute("call", params, undefined, undefined, context);
+		},
+	};
+}
 
-		await sessionStart?.(
-			{ type: "session_start", reason: "fork", previousSessionFile: "/sessions/source.jsonl" },
-			context,
-		);
+const goal = { title: "Stop random logouts", label: "long-term" };
+const task = { type: "task", title: "Trace concurrent refreshes", label: "active" };
 
-		expect(open).toHaveBeenCalledWith("/sessions/source.jsonl");
-		expect(appendEntry).toHaveBeenCalledWith(WORKMAP_ENTRY_TYPE, {
-			version: WORKMAP_SNAPSHOT_VERSION,
-			nodes: snapshot.nodes,
+describe("workmap tools and lifecycle", () => {
+	it("keeps the goal across signal rewrites and restores every accepted tool result", async () => {
+		const app = setup();
+		await app.event("session_start", { reason: "new" });
+		await app.call("set_goal", goal);
+		for (const [name, params] of [
+			["restate", { set: [task] }],
+			["add_drift", { title: "The client-only fix assumes a single worker" }],
+			["restate", { set: [] }],
+		] as const) {
+			const result = await app.call(name, params);
+			const details = result.details as WorkmapToolDetails;
+			expect(details.goal).toEqual(goal);
+			const resumed = setup(app.sessionManager);
+			await resumed.event("session_start", { reason: "resume" });
+			const same = await resumed.call("set_goal", goal);
+			expect(same.details).toMatchObject({ goal, nodes: details.nodes, changed: false });
+		}
+	});
+
+	it("persists an appended drift after eight roots and exposes it after tree navigation", async () => {
+		const app = setup();
+		await app.event("session_start", { reason: "new" });
+		await app.call("set_goal", goal);
+		await app.call("restate", { set: Array.from({ length: 8 }, (_, i) => ({ ...task, title: `Task ${i}` })) });
+		const result = await app.call("add_drift", { title: "Off course" });
+		expect(result.content).toEqual([{ type: "text", text: "Updated workmap · 10 signals" }]);
+		const details = result.details as WorkmapToolDetails;
+		expect(details.nodes).toHaveLength(9);
+		await app.event("session_tree");
+		expect(await app.event("before_agent_start")).toMatchObject({
+			message: { content: expect.stringContaining("drift [detected]: Off course") },
 		});
 	});
 
-	describe("context injection", () => {
-		type Handler = (event: never, context: ExtensionContext) => Promise<unknown> | unknown;
-
-		function setup() {
-			const handlers = new Map<string, Handler>();
-			const tools = new Map<
-				string,
-				{
-					execute: (
-						toolCallId: string,
-						params: unknown,
-						signal: undefined,
-						onUpdate: undefined,
-						ctx: undefined,
-					) => Promise<unknown>;
-				}
-			>();
-			const sessionManager = SessionManager.inMemory();
-			const pi = {
-				on: vi.fn((event: string, handler: Handler) => handlers.set(event, handler)),
-				appendEntry: vi.fn((customType: string, data: unknown) => sessionManager.appendCustomEntry(customType, data)),
-				registerTool: vi.fn((definition: { name: string }) => {
-					tools.set(definition.name, definition as never);
-				}),
-			} as unknown as ExtensionAPI;
-			workmapExtension(pi);
-			const context = {
-				sessionManager,
-				ui: { setWidget: vi.fn() },
-			} as unknown as ExtensionContext;
-			return { handlers, context, getTool: (name: string) => tools.get(name) as never };
+	it("rejects every overflowing write without persisting or losing the accepted map", async () => {
+		const app = setup();
+		await app.event("session_start", { reason: "new" });
+		const full = Array.from({ length: 10 }, (_, i) => ({ ...task, title: `Task ${i}` }));
+		await app.call("restate", { set: full });
+		const writes = app.appendEntry.mock.calls.length;
+		for (const [name, params] of [
+			["set_goal", goal],
+			["add_drift", { title: "Off course" }],
+			["restate", { set: [...full, task] }],
+		] as const) {
+			const result = await app.call(name, params);
+			expect(result).toMatchObject({ isError: true, details: { changed: false, nodes: full } });
+			expect(app.appendEntry).toHaveBeenCalledTimes(writes);
 		}
+	});
 
-		const beforeAgentStart = (handlers: Map<string, Handler>, context: ExtensionContext) =>
-			handlers.get("before_agent_start")?.({ type: "before_agent_start" } as never, context) as Promise<
-				{ message?: { content?: string } } | undefined
-			>;
-
-		it("stays silent while the map is empty", async () => {
-			const { handlers, context } = setup();
-			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-			const result = await beforeAgentStart(handlers, context);
-			expect(result?.message).toBeUndefined();
+	it("shows a goal-only map in context and counts it in the collapsed tool result", async () => {
+		const app = setup();
+		await app.event("session_start", { reason: "new" });
+		expect(await app.event("before_agent_start")).toEqual({});
+		const result = await app.call("set_goal", goal);
+		expect(result.content).toEqual([{ type: "text", text: "Updated workmap · 1 signal" }]);
+		expect(await app.event("before_agent_start")).toMatchObject({
+			message: {
+				content: "<workmap-state>\ngoal [long-term]: Stop random logouts\n</workmap-state>",
+			},
 		});
+		await app.event("session_start", { reason: "new" });
+		expect(await app.event("before_agent_start")).toEqual({});
+	});
 
-		it("re-injects every run and escalates when the map goes stale", async () => {
-			const { handlers, context, getTool } = setup();
-			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-			const set = (nodes: WorkmapRoot[]) =>
-				getTool("workmap").execute("call", { set: nodes }, undefined, undefined, undefined);
-
-			await set(baseMap);
-			const fresh = await beforeAgentStart(handlers, context);
-			expect(fresh?.message?.content).toContain("Re-declare this map with the workmap tool on every user prompt");
-			expect(fresh?.message?.content).not.toContain("user prompts stale");
-
-			const stale = await beforeAgentStart(handlers, context);
-			expect(stale?.message?.content).toContain("The workmap is 2 user prompts stale");
-
-			const staler = await beforeAgentStart(handlers, context);
-			expect(staler?.message?.content).toContain("3 user prompts stale");
-
-			// add_drift is an append, not a rewrite: it must not re-anchor the map.
-			await getTool("add_drift").execute("call", { title: "Off course" }, undefined, undefined, undefined);
-			const afterDrift = await beforeAgentStart(handlers, context);
-			expect(afterDrift?.message?.content).toContain("4 user prompts stale");
-
-			// Only a full re-declaration re-anchors the map.
-			await set(baseMap);
-			const reasserted = await beforeAgentStart(handlers, context);
-			expect(reasserted?.message?.content).not.toContain("user prompts stale");
+	it("lets a drift open the map and rejects an empty normalized child title", async () => {
+		const app = setup();
+		await app.event("session_start", { reason: "new" });
+		const drift = await app.call("add_drift", { title: "Off course" });
+		expect(drift).toMatchObject({
+			isError: false,
+			details: { nodes: [{ type: "drift", title: "Off course", label: "detected" }] },
 		});
-
-		it("keeps the counter running across tree navigation", async () => {
-			const { handlers, context, getTool } = setup();
-			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-			await getTool("workmap").execute("call", { set: baseMap }, undefined, undefined, undefined);
-			await beforeAgentStart(handlers, context);
-			await beforeAgentStart(handlers, context);
-			await handlers.get("session_tree")?.({ type: "session_tree" } as never, context);
-			const result = await beforeAgentStart(handlers, context);
-			expect(result?.message?.content).toContain("3 user prompts stale");
+		const invalid = await app.call("restate", { set: [{ ...task, children: [{ ...task, title: " \n " }] }] });
+		expect(invalid).toMatchObject({
+			isError: true,
+			details: { changed: false, nodes: (drift.details as WorkmapToolDetails).nodes },
 		});
+	});
 
-		it("rejects a set without a long-term goal and an add_drift on an empty map", async () => {
-			const { handlers, context, getTool } = setup();
-			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-
-			const badSet = (await getTool("workmap").execute(
-				"call",
-				{ set: [{ type: "task", title: "No goals" }] },
-				undefined,
-				undefined,
-				undefined,
-			)) as {
-				isError: boolean;
-				details: { error?: string };
-			};
-			expect(badSet.isError).toBe(true);
-			expect(badSet.details.error).toContain("at least one goal");
-
-			const drift = (await getTool("add_drift").execute(
-				"call",
-				{ title: "Off course" },
-				undefined,
-				undefined,
-				undefined,
-			)) as {
-				isError: boolean;
-				details: { error?: string };
-			};
-			expect(drift.isError).toBe(true);
-			expect(drift.details.error).toContain("empty");
-		});
-
-		it("does not re-anchor the map on a rejected set", async () => {
-			const { handlers, context, getTool } = setup();
-			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-			await getTool("workmap").execute("call", { set: baseMap }, undefined, undefined, undefined);
-			await beforeAgentStart(handlers, context);
-
-			// A rejected set changed nothing: it must not reset the stale counter.
-			await getTool("workmap").execute(
-				"call",
-				{ set: [{ type: "task", title: "Hand-edited, no goals" }] },
-				undefined,
-				undefined,
-				undefined,
-			);
-			await beforeAgentStart(handlers, context);
-			const result = await beforeAgentStart(handlers, context);
-			expect(result?.message?.content).toContain("3 user prompts stale");
-		});
+	it("inherits the source session's latest map on fork and evolves independently", async () => {
+		const source = SessionManager.inMemory();
+		source.appendCustomEntry(WORKMAP_ENTRY_TYPE, { version: WORKMAP_SNAPSHOT_VERSION, goal, nodes: [task] });
+		const open = vi.spyOn(SessionManager, "open").mockReturnValue(source);
+		try {
+			const app = setup();
+			await app.event("session_start", { reason: "fork", previousSessionFile: "/sessions/source.jsonl" });
+			expect(app.appendEntry).toHaveBeenCalledWith(WORKMAP_ENTRY_TYPE, {
+				version: WORKMAP_SNAPSHOT_VERSION,
+				goal,
+				nodes: [task],
+			});
+			await app.call("set_goal", { title: "Investigate the server alternative" });
+			const parent = setup(source);
+			await parent.event("session_start", { reason: "resume" });
+			expect(await parent.event("before_agent_start")).toMatchObject({
+				message: { content: expect.stringContaining(goal.title) },
+			});
+		} finally {
+			open.mockRestore();
+		}
 	});
 });

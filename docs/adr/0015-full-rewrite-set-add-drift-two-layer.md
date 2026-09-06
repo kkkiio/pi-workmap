@@ -1,6 +1,7 @@
 # ADR 0015: 全量重写、set/add_drift 双工具与两层结构
 
 - Status: Accepted（取代 [ADR 0010](0010-staleness-counter-reinjection.md)、[ADR 0011](0011-nested-children-root-ids.md)、[ADR 0013](0013-full-tree-widget-capacity-eviction.md)、[ADR 0014](0014-guidelines-slimming-type-scoped-status.md)；部分取代 [ADR 0003](0003-no-blocker-node.md) 的 Task · blocked 面包屑通道）
+- 本 ADR 的目标写入通道、guidelines 分配和反馈机制由 [ADR 0017](0017-set-goal-restate.md) 修订。
 - Date: 2026-09-02
 
 ## Context

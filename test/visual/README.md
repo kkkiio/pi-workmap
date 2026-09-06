@@ -28,4 +28,6 @@ npm run docs:screenshot
 
 The Freeze window, font, spacing, and background are pinned in `freeze.json`; the script does not read a user's personal Freeze configuration. Set `FREEZE_BIN` when the executable is not on `PATH`.
 
-The command reuses `fixtures/workmap-session.jsonl` and overwrites both documentation assets.
+The command reuses `fixtures/workmap-session.jsonl` and overwrites the documentation screenshot.
+
+The capture selects the fixture model with a dummy key for offline rendering and seeds its temporary agent directory with `~/.pi/agent/models-store.json`. Run Pi once to populate that offline model catalog before capturing.

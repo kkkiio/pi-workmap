@@ -1,27 +1,20 @@
-import type { WorkmapNodeType } from "./node-types.js";
+import type { Static } from "typebox";
+import type { ChildSchema, GoalSchema, RootSchema, WorkmapSchema } from "./node-types.js";
 
-/** A supporting signal nested under a root. Children are leaves: the map is two layers deep. */
-export interface WorkmapChild {
-	type: WorkmapNodeType;
-	title: string;
-	status?: string;
-}
+export type WorkmapChild = Static<typeof ChildSchema>;
+export type WorkmapRoot = Static<typeof RootSchema>;
+export type WorkmapGoal = Static<typeof GoalSchema>;
+export type WorkmapView = Static<typeof WorkmapSchema>;
 
-/** A root-level signal — the only layer allowed to carry children (ADR 0015). */
-export interface WorkmapRoot extends WorkmapChild {
-	children?: WorkmapChild[];
-}
-
-export interface WorkmapToolDetails {
-	version: 5;
-	action: "set" | "add";
+export interface WorkmapToolDetails extends WorkmapView {
+	version: 7;
+	action: "set" | "set_goal" | "add";
 	changed: boolean;
 	error?: string;
-	nodes: WorkmapRoot[];
 }
 
-export function countNodes(roots: WorkmapRoot[]): number {
-	let total = roots.length;
-	for (const root of roots) total += root.children?.length ?? 0;
+export function countNodes(view: WorkmapView): number {
+	let total = view.nodes.length + (view.goal ? 1 : 0);
+	for (const root of view.nodes) total += root.children?.length ?? 0;
 	return total;
 }
