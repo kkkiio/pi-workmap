@@ -2,7 +2,7 @@ import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent"
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { orderedRoots } from "./context-message.js";
 import type { WorkmapNodeType } from "./node-types.js";
-import { countNodes, type WorkmapChild, type WorkmapRoot, type WorkmapView } from "./types.js";
+import { type WorkmapRoot, type WorkmapView } from "./types.js";
 
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;
@@ -93,7 +93,7 @@ export class WorkmapWidget {
 						: theme.fg("accent", theme.bold(title)),
 				);
 			}
-			lines.push(theme.fg("accent", theme.bold(this.renderSummary(view.nodes, theme))));
+			lines.push(theme.fg("accent", theme.bold(this.renderSummary(view, theme))));
 			const ordered = orderedRoots(view.nodes);
 			for (const root of ordered) {
 				lines.push(this.renderNode(root, "", width, theme));
@@ -109,15 +109,17 @@ export class WorkmapWidget {
 		}
 	}
 
-	private renderSummary(nodes: WorkmapRoot[], theme: Theme): string {
+	private renderSummary(view: WorkmapView, theme: Theme): string {
 		let driftCount = 0;
-		for (const node of nodes) {
+		for (const node of view.nodes) {
 			if (node.type === "drift") driftCount += 1;
 			for (const child of node.children ?? []) {
 				if (child.type === "drift") driftCount += 1;
 			}
 		}
-		const base = theme.fg("accent", theme.bold(`Workmap · ${countNodes(nodes)} signals`));
+		// The goal is a signal too (ADR 0017): the count includes it.
+		const total = countNodes(view.nodes) + (view.goal ? 1 : 0);
+		const base = theme.fg("accent", theme.bold(`Workmap · ${total} signals`));
 		if (!driftCount) return base;
 		return `${base} ${theme.fg("error", theme.bold(`· ${driftCount} drift`))}`;
 	}

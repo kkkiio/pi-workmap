@@ -51,7 +51,7 @@ Keep session semantics in `src/state.ts`, presentation in `src/widget.ts`, and P
 
 - **Drift** — A detected mismatch between the Agent's direction and user intent or the declared workmap; rendered directly below the Goal header.
 
-Labels are type-scoped; the recommended vocabulary per type lives in `src/node-types.ts` (goal: unlabeled reads as the current focus, `long-term` optionally marks a standing project-level direction; decision: considering/chosen; understanding: confirmed/inferred/hypothesis; task: pending/active/done). Vocabulary is wording (ADR 0015), never validation. Structural limits: at most 8 signals per `set` declaration with ≤4 children each, and at most 10 signals in total (children included) — violations and over-capacity sets are rejected whole, never silently pruned (ADR 0015).
+Labels are type-scoped; the recommended vocabulary per type lives in `src/node-types.ts` (goal: unlabeled reads as the current focus, `long-term` optionally marks a standing project-level direction; decision: considering/chosen; understanding: confirmed/inferred/hypothesis; task: pending/active/done). Vocabulary is wording (ADR 0015), never validation. Structural limits: at most 8 signals per `set` declaration with ≤4 children each, and at most 10 signals in total (goal and children included) — violations and over-capacity sets are rejected whole, never silently pruned (ADR 0015).
 
 ## Policies & Mandatory Rules
 

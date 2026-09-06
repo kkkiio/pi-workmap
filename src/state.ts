@@ -69,18 +69,19 @@ export class WorkmapState {
 
 	/**
 	 * Full signal-map declaration: replaces the node list, atomically. The goal
-	 * header is not part of this list — `set_goal` owns it (ADR 0017). Structure
-	 * is validated and the ≤10 UI invariant backstops the declaration shape; the
-	 * Agent decides what to drop, the mechanism never silently prunes.
+	 * header is not part of this list — `set_goal` owns it (ADR 0017), and the
+	 * ≤10 invariant counts it: one number for all signals. Structure is
+	 * validated; the Agent decides what to drop, the mechanism never silently
+	 * prunes.
 	 */
 	set(nodes: WorkmapRoot[]): WorkmapResult {
 		const nodeError = this.validateNodes(nodes ?? []);
 		if (nodeError) return { changed: false, error: nodeError };
 		const next = (nodes ?? []).map((node) => sanitizeNode(node));
-		if (countNodes(next) > MAX_WORKMAP_NODES) {
+		if (countNodes(next) + (this.goal ? 1 : 0) > MAX_WORKMAP_NODES) {
 			return {
 				changed: false,
-				error: `The map is limited to ${MAX_WORKMAP_NODES} nodes (children included) — keep the ones that matter most and re-declare`,
+				error: `The map is limited to ${MAX_WORKMAP_NODES} signals (goal and children included) — keep the ones that matter most and re-declare`,
 			};
 		}
 		const changed = JSON.stringify(next) !== JSON.stringify(this.roots);
@@ -112,10 +113,10 @@ export class WorkmapState {
 		const node = sanitizeNode({ type: "drift", title, label: "detected" });
 		const nodeError = validateNode(node, 1);
 		if (nodeError) return { changed: false, error: nodeError };
-		if (countNodes([...this.roots, node]) > MAX_WORKMAP_NODES) {
+		if (countNodes([...this.roots, node]) + (this.goal ? 1 : 0) > MAX_WORKMAP_NODES) {
 			return {
 				changed: false,
-				error: `The map is full (${MAX_WORKMAP_NODES} nodes) — re-declare it with the set_signals tool to make room`,
+				error: `The map is full (${MAX_WORKMAP_NODES} signals) — re-declare it with the set_signals tool to make room`,
 			};
 		}
 		this.roots.push(node);

@@ -11,11 +11,11 @@
 
 ## Decision
 
-1. **goal 移出 `set` 的节点列表**：`workmap set` 的类型 enum 剩 5 类（understanding / decision / option / task / drift）；goal 是 state 级独立槽位，**唯一写入者是 `set_goal`**（双写必打架，不留）。
+1. **goal 移出 `set` 的节点列表**：`set_signals` 的类型 enum 剩 5 类（understanding / decision / option / task / drift）。goal 仍是 Signal——六个信号类型之一——只是写入通道按频率分开：`set_signals`（每轮全量重写常变信号）、`set_goal`（低频蒸馏）、`add_drift`（mid-loop 追加；drift 是唯一同类型双通道的信号，也可在 set_signals 里全量重写）。goal 槽位的唯一写入者是 `set_goal`（双写必打架，不留）。
 2. **`set_goal` 参数**：`{ title: string(1–120), status?: string(≤24) }`——与 goal 节点形状一致（保留 long-term 标注能力，ADR 0008 血统不断）；纯 properties，strict 子集全兼容。
 3. **渲染**：goal 是 map header（✦ + accent），不是树行；drift 悬挂其下（回归 ADR 0016 的表述）；快照 v7 = `{ goal?, nodes }`，v6→v7 迁移把 goal 根节点提取为 header 字段。
 4. **MUST 全量重写的范围相应收窄**：每轮重写 signals（不含 goal）；goal 由 `set_goal` 在意图形成/深化时写入。
-5. **容量**：roots ≤ 8、children ≤ 4 与总节点 ≤10 兜底只计 nodes；header 不计。`set: []` 清 signals 不清 goal（独立槽位）。
+5. **容量**：roots ≤ 8、children ≤ 4 限 set 声明的形状；总信号 ≤10 兜底**含 goal**（goal 是信号，计数一视同仁）——set 与 add_drift 共用同一数字。`set: []` 清 signals 不清 goal（通道独立，槽位独立）。
 6. **无机械保证模型何时 `set_goal`**——guideline 引导 + 无 goal 时 header 缺席可见。观察，不立法（ADR 0015 的措辞层纪律）。
 
 ### Guidelines（定稿措辞，2026-09-06 收缩）
@@ -34,6 +34,6 @@
 
 - 近目标污染的通道关闭；意图写入成为显式的一步（distill），与 concept.md 的蒸馏图对齐。
 - 双写冲突不存在（唯一写者）；goal 跨全量重写稳定，只有 `set_goal` 改变它。
-- 快照 v7；widget 契约：header + ≤8 root（各 ≤4 children），总节点 ≤10 兜底（计 nodes）。
+- 快照 v7；widget 契约：header + ≤8 root（各 ≤4 children），总信号 ≤10 兜底（计 goal）。
 - 后记（2026-09-06）：信号声明工具更名 `workmap` → `set_signals`。Workmap 术语仍指含 goal header 的全图；工具只写 signals，名字不再占用 Workmap，与 `set_goal` / `add_drift` 构成“槽位 = 工具”的命名约定。存储 entry type（`pi-workmap-state`）不变。
 - 开放问题：模型主动 `set_goal` 的时机质量（是否等得到蒸馏，还是又退回近目标复述）——header 缺席与 title 措辞是可见信号。

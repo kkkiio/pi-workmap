@@ -9,9 +9,11 @@
  * 0005), so types whose routing practice never materializes get deleted rather
  * than tolerated.
  *
- * The goal is not a node type: it is the intent header, written through the
- * dedicated `set_goal` tool and rendered above the tree (ADR 0017). Mixing it
- * into the per-prompt signal rewrite turned it into a task restatement.
+ * The goal is a signal too — the intent header. It is absent from this enum
+ * only because its write channel is the dedicated `set_goal` tool (ADR 0017):
+ * the three tools split the signal family by write frequency, not by
+ * category. Mixing goal into the per-prompt signal rewrite turned it into a
+ * task restatement.
  */
 
 export const WORKMAP_NODE_TYPES = [

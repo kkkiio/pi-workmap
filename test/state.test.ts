@@ -82,7 +82,7 @@ describe("WorkmapState.set", () => {
 		const state = new WorkmapState();
 		const result = state.set([tree("Head", 4), tree("Tail", 4), ...baseMap()]);
 		expect(result.changed).toBe(false);
-		expect(result.error).toContain("limited to 10 nodes");
+		expect(result.error).toContain("limited to 10 signals");
 		expect(state.view().nodes).toEqual([]);
 	});
 
@@ -176,7 +176,7 @@ describe("WorkmapState.addDrift", () => {
 		const state = new WorkmapState();
 		state.set(fullMap());
 		const result = state.addDrift("Off course");
-		expect(result.error).toContain("full (10 nodes)");
+		expect(result.error).toContain("full (10 signals)");
 		expect(state.view().nodes).toEqual(fullMap());
 	});
 });

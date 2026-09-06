@@ -49,7 +49,7 @@ try {
 	]);
 	for (let attempt = 0; attempt < 80; attempt += 1) {
 		const { stdout } = await exec("tmux", ["capture-pane", "-p", "-t", `${sessionName}:0.0`]);
-		if (stdout.includes("Workmap · 7 signals")) break;
+		if (stdout.includes("Workmap · 8 signals")) break;
 		if (attempt === 79) throw new Error("Timed out waiting for the workmap widget");
 		await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
 	}

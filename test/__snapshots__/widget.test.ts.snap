@@ -2,7 +2,7 @@
 
 exports[`WorkmapWidget > drops labels before squeezing titles on narrow widths (snapshot) 1`] = `
 "✦ Stop random logouts
-Workmap · 5 signals ·[0m...[0m
+Workmap · 6 signals ·[0m...[0m
 ⎇  Implementation is [0m...[0m
 ◆  Use session-global[0m...[0m
 └─ ◎  Render the pers[0m...[0m
@@ -12,7 +12,7 @@ Workmap · 5 signals ·[0m...[0m
 
 exports[`WorkmapWidget > keeps labels right-aligned when there is room (snapshot) 1`] = `
 "✦ Stop random logouts                              long-term
-Workmap · 5 signals · 1 drift
+Workmap · 6 signals · 1 drift
 ⎇  Implementation is becoming a todo manager        detected
 ◆  Use session-global snapshots                       chosen
 └─ ◎  Render the persistent widget                    active
@@ -22,7 +22,7 @@ Workmap · 5 signals · 1 drift
 
 exports[`WorkmapWidget > renders past the former compact budget without hidden counts (snapshot) 1`] = `
 "✦ Stop random logouts                                                long-term
-Workmap · 8 signals · 1 drift
+Workmap · 9 signals · 1 drift
 ⎇  Implementation is becoming a todo manager                          detected
 ◆  Use session-global snapshots                                         chosen
 └─ ◎  Render the persistent widget                                      active
@@ -35,7 +35,7 @@ Workmap · 8 signals · 1 drift
 
 exports[`WorkmapWidget > renders the goal header above the full tree at standard width (snapshot) 1`] = `
 "✦ Stop random logouts                                                long-term
-Workmap · 5 signals · 1 drift
+Workmap · 6 signals · 1 drift
 ⎇  Implementation is becoming a todo manager                          detected
 ◆  Use session-global snapshots                                         chosen
 └─ ◎  Render the persistent widget                                      active
