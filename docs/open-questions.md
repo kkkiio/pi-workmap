@@ -6,15 +6,11 @@
 
 ### Rewrite fidelity（重写保真）
 
-全量重写给了模型每轮静默丢信号的机会：改写中缩短 title、丢掉 child、或整棵丢弃仍然相关的树。需要观察：被丢的信号多久被用户或 tool 回显发现；重写质量是否随 session 变长衰减；重写是否沦为机械复读（内容长期不变也不重审 goal）。
-
-### Stale counter effectiveness
-
-注入 footer 的 prompt 计数与 ≥2 时的点名升级，是否真能把遗忘的重写拉回来？需要观察模型对重复出现的快照是否习惯化（计数增长仍不触发 set），以及升级文案触发后首个动作是否就是 workmap 调用。
+全量重写给了模型每轮静默丢信号的机会：改写中缩短 title、丢掉 child、或整棵丢弃仍然相关的树。需要观察：被丢的信号多久被用户从 widget 中发现；重写质量是否随 session 变长衰减；重写是否沦为机械复读（内容长期不变也不重审 signals）。
 
 ### add_drift adoption
 
-add_drift 是否真的被用在设计场景——换方案或绕路的瞬间？还是被当作通用 mid-loop 更新（如果发生，观察追加内容的类型分布与质量），或干脆从不使用？空 map 与满容量拒绝的出现频率也是信号：频繁的满容量拒绝说明 10 节点对实际工作太紧。
+add_drift 是否真的被用在设计场景——换方案或绕路的瞬间？还是被当作通用 mid-loop 更新（如果发生，观察追加内容的类型分布与质量），或干脆从不使用？满容量拒绝的出现频率也是信号：频繁的满容量拒绝说明 10 节点对实际工作太紧。
 
 ### Drift discoverability
 
@@ -22,7 +18,7 @@ Agent 能否可靠识别自己与 user intent 的真实偏差，而不是只记�
 
 ### Long-term intent inference
 
-用户期待 goal 能承载会话级乃至项目级的意图（如"改进 rewrite tool"），但受控回放与真实使用中 LLM 均未主动写出长期意图，只停留在当轮请求的近目标（ADR 0016 的 ablation 两臂均如此）。goal 命名 + 意图级 guideline 改善了锚的稳定性与加深，但没有解决 long-term intent 的推断。待验证：更明确的类型语言是否能引导推断；用户显式声明后的沿用行为；跨 session 的项目级 goal 该由谁声明。
+用户期待 goal 能承载会话级乃至项目级的意图（如"改进 rewrite tool"），但受控回放与真实使用中 LLM 均未主动写出长期意图，只停留在当轮请求的近目标（ADR 0016 的 ablation 两臂均如此）。goal 命名 + 意图级 guideline 改善了锚的稳定性与加深，但没有解决 long-term intent 的推断。待验证：独立 `set_goal` 通道是否改善意图提炼和写入时机；用户显式声明后的沿用行为；跨 session 的项目级 goal 该由谁声明。
 
 ### Fork edge cases
 

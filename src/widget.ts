@@ -2,14 +2,14 @@ import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent"
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { orderedRoots } from "./context-message.js";
 import type { WorkmapNodeType } from "./node-types.js";
-import { countNodes, type WorkmapChild, type WorkmapRoot } from "./types.js";
+import { countNodes, type WorkmapChild, type WorkmapGoal, type WorkmapView } from "./types.js";
 
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;
 // Every glyph occupies a two-column cell so double-width glyphs keep titles left-aligned.
 const GLYPH_CELL_WIDTH = 2;
 export const PRESENTATION: Record<
-	WorkmapNodeType,
+	WorkmapNodeType | "goal",
 	{ glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }
 > = {
 	goal: { glyph: "✦", glyphColor: "accent" },
@@ -20,7 +20,7 @@ export const PRESENTATION: Record<
 	drift: { glyph: "⎇", glyphColor: "error" },
 };
 
-export function glyphCell(type: WorkmapNodeType): string {
+export function glyphCell(type: WorkmapNodeType | "goal"): string {
 	const { glyph } = PRESENTATION[type];
 	return glyph + " ".repeat(Math.max(0, GLYPH_CELL_WIDTH - visibleWidth(glyph)));
 }
@@ -30,7 +30,7 @@ export class WorkmapWidget {
 	private tui: TUI | undefined;
 	private registered = false;
 
-	constructor(private readonly getNodes: () => WorkmapRoot[]) {}
+	constructor(private readonly getView: () => WorkmapView) {}
 
 	attach(ui: ExtensionUIContext): void {
 		if (this.ui !== ui && this.registered && this.ui) this.ui.setWidget("workmap", undefined);
@@ -42,7 +42,8 @@ export class WorkmapWidget {
 
 	update(): void {
 		if (!this.ui) return;
-		if (this.getNodes().length === 0) {
+		const view = this.getView();
+		if (view.nodes.length === 0 && !view.goal) {
 			if (this.registered) this.ui.setWidget("workmap", undefined);
 			this.registered = false;
 			this.tui = undefined;
@@ -78,9 +79,11 @@ export class WorkmapWidget {
 	// is nothing hidden.
 	private render(width: number, theme: Theme): string[] {
 		try {
-			const nodes = this.getNodes();
-			if (nodes.length === 0 || width < 8) return [];
-			const lines = [theme.fg("accent", theme.bold(this.renderSummary(nodes, theme)))];
+			const view = this.getView();
+			const { nodes, goal } = view;
+			if ((nodes.length === 0 && !goal) || width < 8) return [];
+			const lines = [theme.fg("accent", theme.bold(this.renderSummary(view, theme)))];
+			if (goal) lines.push(this.renderNode({ ...goal, type: "goal" }, "", width, theme));
 			const ordered = orderedRoots(nodes);
 			for (const root of ordered) {
 				lines.push(this.renderNode(root, "", width, theme));
@@ -96,24 +99,29 @@ export class WorkmapWidget {
 		}
 	}
 
-	private renderSummary(nodes: WorkmapRoot[], theme: Theme): string {
+	private renderSummary(view: WorkmapView, theme: Theme): string {
 		let driftCount = 0;
-		for (const node of nodes) {
+		for (const node of view.nodes) {
 			if (node.type === "drift") driftCount += 1;
 			for (const child of node.children ?? []) {
 				if (child.type === "drift") driftCount += 1;
 			}
 		}
-		const base = theme.fg("accent", theme.bold(`Workmap · ${countNodes(nodes)} signals`));
+		const base = theme.fg("accent", theme.bold(`Workmap · ${countNodes(view)} signals`));
 		if (!driftCount) return base;
 		return `${base} ${theme.fg("error", theme.bold(`· ${driftCount} drift`))}`;
 	}
 
-	private renderNode(node: WorkmapChild, prefix: string, width: number, theme: Theme): string {
+	private renderNode(
+		node: WorkmapChild | (WorkmapGoal & { type: "goal" }),
+		prefix: string,
+		width: number,
+		theme: Theme,
+	): string {
 		const presentation = PRESENTATION[node.type];
 		const left = `${theme.fg("dim", prefix)}${theme.fg(presentation.glyphColor, glyphCell(node.type))} ${theme.fg("text", node.title)}`;
-		if (!node.status) return truncateToWidth(left, width);
-		return this.align(left, theme.fg("dim", node.status), width);
+		if (!node.label) return truncateToWidth(left, width);
+		return this.align(left, theme.fg("dim", node.label), width);
 	}
 
 	private align(left: string, right: string, width: number): string {
