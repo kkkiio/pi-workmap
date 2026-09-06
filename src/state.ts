@@ -115,7 +115,7 @@ export class WorkmapState {
 		if (countNodes([...this.roots, node]) > MAX_WORKMAP_NODES) {
 			return {
 				changed: false,
-				error: `The map is full (${MAX_WORKMAP_NODES} nodes) — re-declare it with the workmap tool to make room`,
+				error: `The map is full (${MAX_WORKMAP_NODES} nodes) — re-declare it with the set_signals tool to make room`,
 			};
 		}
 		this.roots.push(node);

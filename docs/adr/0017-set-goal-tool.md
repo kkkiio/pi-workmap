@@ -35,4 +35,5 @@
 - 近目标污染的通道关闭；意图写入成为显式的一步（distill），与 concept.md 的蒸馏图对齐。
 - 双写冲突不存在（唯一写者）；goal 跨全量重写稳定，只有 `set_goal` 改变它。
 - 快照 v7；widget 契约：header + ≤8 root（各 ≤4 children），总节点 ≤10 兜底（计 nodes）。
+- 后记（2026-09-06）：信号声明工具更名 `workmap` → `set_signals`。Workmap 术语仍指含 goal header 的全图；工具只写 signals，名字不再占用 Workmap，与 `set_goal` / `add_drift` 构成“槽位 = 工具”的命名约定。存储 entry type（`pi-workmap-state`）不变。
 - 开放问题：模型主动 `set_goal` 的时机质量（是否等得到蒸馏，还是又退回近目标复述）——header 缺席与 title 措辞是可见信号。

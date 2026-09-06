@@ -2,7 +2,7 @@ import type { WorkmapChild, WorkmapGoal, WorkmapRoot } from "./types.js";
 
 export interface StateMessageMeta {
 	/**
-	 * User prompts since the last accepted full `workmap` declaration —
+	 * User prompts since the last accepted full `set_signals` declaration —
 	 * add_drift appends but never re-anchors, so it does not reset this. The
 	 * MUST in prompt guidelines lowers forgetting but cannot eliminate it; this
 	 * counter makes a missed rewrite visible and escalates when it happens.
@@ -51,8 +51,8 @@ export function renderStateMessage(
 ): string {
 	const stale = meta.promptsSinceRewrite >= 2;
 	const footer = stale
-		? `The workmap is ${meta.promptsSinceRewrite} user prompts stale — re-declare it with the workmap tool before acting.`
-		: "Re-declare this map with the workmap tool on every user prompt; add_drift the moment you change course mid-task.";
+		? `The workmap is ${meta.promptsSinceRewrite} user prompts stale — re-declare it with the set_signals tool before acting.`
+		: "Re-declare this map with the set_signals tool on every user prompt; add_drift the moment you change course mid-task.";
 	return [
 		"<workmap-state>",
 		...(goal ? ["", `goal${goal.label ? ` [${goal.label}]` : ""}: ${goal.title}`] : []),

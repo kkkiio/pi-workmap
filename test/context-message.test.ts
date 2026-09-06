@@ -44,7 +44,7 @@ describe("renderStateMessage", () => {
 	});
 
 	it("frames the message with the two writing surfaces", () => {
-		expect(output).toContain("Re-declare this map with the workmap tool on every user prompt");
+		expect(output).toContain("Re-declare this map with the set_signals tool on every user prompt");
 		expect(output).toContain("add_drift the moment you change course mid-task");
 		expect(output.startsWith("<workmap-state>")).toBe(true);
 		expect(output.trimEnd().endsWith("</workmap-state>")).toBe(true);
@@ -52,14 +52,14 @@ describe("renderStateMessage", () => {
 
 	it("keeps the routine footer while the map is fresh", () => {
 		expect(renderStateMessage(nodes, undefined, { promptsSinceRewrite: 1 })).toContain(
-			"Re-declare this map with the workmap tool on every user prompt",
+			"Re-declare this map with the set_signals tool on every user prompt",
 		);
 		expect(renderStateMessage(nodes, undefined, { promptsSinceRewrite: 1 })).not.toContain("stale");
 	});
 
 	it("escalates once the map is stale", () => {
 		expect(renderStateMessage(nodes, undefined, { promptsSinceRewrite: 2 })).toContain(
-			"The workmap is 2 user prompts stale — re-declare it with the workmap tool before acting.",
+			"The workmap is 2 user prompts stale — re-declare it with the set_signals tool before acting.",
 		);
 		expect(renderStateMessage(nodes, undefined, { promptsSinceRewrite: 7 })).toContain("7 user prompts stale");
 	});
