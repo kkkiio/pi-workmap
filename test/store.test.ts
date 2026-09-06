@@ -1,7 +1,7 @@
 import type { ExtensionContext, SessionEntry } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
 import { WORKMAP_ENTRY_TYPE, WORKMAP_SNAPSHOT_VERSION, type WorkmapSnapshot } from "../src/session-entry.js";
-import { MAX_ROOTS, MAX_WORKMAP_NODES, WorkmapState } from "../src/state.js";
+import { WorkmapStore } from "../src/store.js";
 import type { WorkmapRoot } from "../src/types.js";
 
 const decision: WorkmapRoot = { type: "decision", title: "Which label vocabulary survives?", label: "considering" };
@@ -48,9 +48,9 @@ function snapshotEntry(nodes: unknown, goal?: unknown): SessionEntry {
 	} as unknown as SessionEntry;
 }
 
-describe("WorkmapState.set", () => {
+describe("WorkmapStore.set", () => {
 	it("replaces the whole signal map atomically", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		expect(state.set(baseMap())).toEqual({ changed: true });
 
 		expect(state.set([decision, { ...understanding, title: "Branch navigation is session-global" }])).toEqual({
@@ -63,13 +63,13 @@ describe("WorkmapState.set", () => {
 	});
 
 	it("treats a byte-identical re-declaration as no change", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.set(baseMap());
 		expect(state.set(structuredClone(baseMap()))).toEqual({ changed: false });
 	});
 
 	it("clears with an empty array and leaves the goal alone", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.set(baseMap());
 		state.setGoal("Keep the auth layer trustworthy");
 		expect(state.set([])).toEqual({ changed: true });
@@ -79,7 +79,7 @@ describe("WorkmapState.set", () => {
 	});
 
 	it("rejects over-capacity maps instead of evicting", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		const result = state.set([tree("Head", 4), tree("Tail", 4), ...baseMap()]);
 		expect(result.changed).toBe(false);
 		expect(result.error).toContain("limited to 10 signals");
@@ -87,37 +87,39 @@ describe("WorkmapState.set", () => {
 	});
 
 	it("rejects more than 8 roots", () => {
-		const state = new WorkmapState();
-		const result = state.set(Array.from({ length: MAX_ROOTS + 1 }, (_, index) => tree(`Root ${index}`)));
-		expect(result.error).toContain("at most 8 root signals");
+		const state = new WorkmapStore();
+		const result = state.set(Array.from({ length: 9 }, (_, index) => tree(`Root ${index}`)));
+		expect(result.error).toContain("The signal tree violates its schema");
 	});
 
 	it("rejects more than 4 children per root", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		const result = state.set([tree("Huge", 5)]);
-		expect(result.error).toContain("at most 4 children");
+		expect(result.error).toContain("The signal tree violates its schema");
 	});
 
 	it("rejects nesting deeper than two levels", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		const deep = {
 			...decision,
 			title: "Deep",
 			children: [{ type: "task", title: "Child", children: [{ type: "task", title: "Grandchild" }] }],
-		} as WorkmapRoot;
-		expect(state.set([deep]).error).toContain("nesting deeper than 2 levels");
+		} as unknown as WorkmapRoot;
+		expect(state.set([deep]).error).toContain("The signal tree violates its schema");
 	});
 
 	it("rejects invalid nodes without changing state", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.set(baseMap());
-		expect(state.set([{ ...decision, type: "nonsense" as never }]).error).toContain("invalid node type");
-		expect(state.set([{ ...decision, title: "" }]).error).toContain("invalid title");
+		expect(state.set([{ ...decision, type: "nonsense" as never }]).error).toContain(
+			"The signal tree violates its schema",
+		);
+		expect(state.set([{ ...decision, title: "" }]).error).toContain("The signal tree violates its schema");
 		expect(state.view().nodes).toEqual(baseMap());
 	});
 
 	it("sanitizes control characters and drops empty children", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.set([{ ...decision, title: "Fix\tthe  flaky\nauth test", label: "  considering  ", children: [] }]);
 		expect(state.view().nodes[0]?.title).toBe("Fix the flaky auth test");
 		expect(state.view().nodes[0]?.label).toBe("considering");
@@ -125,9 +127,9 @@ describe("WorkmapState.set", () => {
 	});
 });
 
-describe("WorkmapState.setGoal", () => {
+describe("WorkmapStore.setGoal", () => {
 	it("distills the goal header and keeps it across signal rewrites", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		expect(state.setGoal("Stop random logouts", "long-term")).toEqual({ changed: true });
 		expect(state.view().goal).toEqual({ title: "Stop random logouts", label: "long-term" });
 
@@ -136,27 +138,27 @@ describe("WorkmapState.setGoal", () => {
 	});
 
 	it("treats a byte-identical goal as no change", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.setGoal("Stop random logouts");
 		expect(state.setGoal("Stop random logouts")).toEqual({ changed: false });
 		expect(state.setGoal("Stop random logouts", "long-term")).toEqual({ changed: true });
 	});
 
 	it("rejects an empty or over-long title", () => {
-		const state = new WorkmapState();
-		expect(state.setGoal("").error).toContain("invalid title");
-		expect(state.setGoal("x".repeat(121)).error).toContain("invalid title");
+		const state = new WorkmapStore();
+		expect(state.setGoal("").error).toContain("invalid goal");
+		expect(state.setGoal("x".repeat(121)).error).toContain("invalid goal");
 	});
 
 	it("rejects an over-long label", () => {
-		const state = new WorkmapState();
-		expect(state.setGoal("Valid", "x".repeat(25)).error).toContain("invalid label");
+		const state = new WorkmapStore();
+		expect(state.setGoal("Valid", "x".repeat(25)).error).toContain("invalid goal");
 	});
 });
 
-describe("WorkmapState.addDrift", () => {
+describe("WorkmapStore.addDrift", () => {
 	it("appends a drift with the detected label", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.set(baseMap());
 		expect(state.addDrift("Implementation is becoming a todo manager")).toEqual({ changed: true });
 		expect(state.view().nodes.at(-1)).toEqual({
@@ -167,13 +169,13 @@ describe("WorkmapState.addDrift", () => {
 	});
 
 	it("opens a map from empty: a drift may start one", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		expect(state.addDrift("Off course")).toEqual({ changed: true });
 		expect(state.view().nodes).toEqual([{ type: "drift", title: "Off course", label: "detected" }]);
 	});
 
 	it("rejects at capacity instead of evicting", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.set(fullMap());
 		const result = state.addDrift("Off course");
 		expect(result.error).toContain("full (10 signals)");
@@ -181,7 +183,7 @@ describe("WorkmapState.addDrift", () => {
 	});
 });
 
-describe("WorkmapState.restore", () => {
+describe("WorkmapStore.restore", () => {
 	it("restores the latest snapshot rather than the active branch", () => {
 		const oldSnapshot: WorkmapSnapshot = { version: WORKMAP_SNAPSHOT_VERSION, nodes: baseMap() };
 		const latestSnapshot: WorkmapSnapshot = {
@@ -199,7 +201,7 @@ describe("WorkmapState.restore", () => {
 					data,
 				}) as SessionEntry,
 		);
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 
 		state.restore(sessionWith(entries));
 
@@ -207,13 +209,13 @@ describe("WorkmapState.restore", () => {
 	});
 
 	it("restores the goal header", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.restore(sessionWith([snapshotEntry(baseMap(), { title: "Stop random logouts", label: "long-term" })]));
 		expect(state.view().goal).toEqual({ title: "Stop random logouts", label: "long-term" });
 	});
 
 	it("starts empty without snapshots", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.set(baseMap());
 		state.setGoal("Stop random logouts");
 		state.restore(sessionWith([]));
@@ -221,25 +223,25 @@ describe("WorkmapState.restore", () => {
 	});
 
 	it("falls back to the previous snapshot when the newest is semantically invalid", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.restore(sessionWith([snapshotEntry(baseMap()), snapshotEntry([{ type: "task", title: "" }])]));
 		expect(state.view().nodes).toEqual(baseMap());
 	});
 
 	it("skips snapshots with malformed nodes instead of crashing", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.restore(sessionWith([snapshotEntry([null, decision])]));
 		expect(state.view().nodes).toEqual([]);
 	});
 
 	it("skips over-capacity snapshots", () => {
-		const state = new WorkmapState();
-		state.restore(sessionWith([snapshotEntry([tree("Huge", MAX_WORKMAP_NODES), ...baseMap()])]));
+		const state = new WorkmapStore();
+		state.restore(sessionWith([snapshotEntry([tree("Huge", 10), ...baseMap()])]));
 		expect(state.view().nodes).toEqual([]);
 	});
 
 	it("migrates v6 goal roots into the header and renames status to label", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.restore(
 			sessionWith([
 				{
@@ -263,7 +265,7 @@ describe("WorkmapState.restore", () => {
 	});
 
 	it("migrates v4 heading lineage through the same path", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.restore(
 			sessionWith([
 				{
@@ -287,7 +289,7 @@ describe("WorkmapState.restore", () => {
 	});
 
 	it("skips legacy snapshot versions older than the migration window", () => {
-		const state = new WorkmapState();
+		const state = new WorkmapStore();
 		state.restore(
 			sessionWith([
 				{

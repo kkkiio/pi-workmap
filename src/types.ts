@@ -1,4 +1,4 @@
-import type { WorkmapNodeType } from "./node-types.js";
+import type { WorkmapNodeType } from "./agent_api.js";
 
 /** A supporting signal nested under a root. Children are leaves: the map is two layers deep. */
 export interface WorkmapChild {

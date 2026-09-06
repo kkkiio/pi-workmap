@@ -83,7 +83,15 @@ describe("workmap extension lifecycle", () => {
 				sessionManager,
 				ui: { setWidget: vi.fn() },
 			} as unknown as ExtensionContext;
-			return { handlers, context, getTool: (name: string) => tools.get(name) as never };
+			return {
+				handlers,
+				context,
+				getTool: (name: string) => {
+					const tool = tools.get(name);
+					if (!tool) throw new Error(`tool ${name} not registered`);
+					return tool;
+				},
+			};
 		}
 
 		const beforeAgentStart = (handlers: Map<string, Handler>, context: ExtensionContext) =>

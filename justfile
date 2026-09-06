@@ -1,18 +1,28 @@
-# biome: lint + format in one tool (lint --write applies safe fixes incl. formatting)
-default:
-	@just --list
+# pi-workmap
 
-# Apply lint autofixes and formatting (biome check --write)
+# Default: the full gate.
+default: check
+
+# Format + autofix in src/ and test/.
 fmt:
 	npm run lint:fix
 
-# Full check suite: lint, typecheck, tests, build (matches AGENTS.md "complete check suite")
+# Lint + typecheck (catches broken imports biome cannot see).
 check:
 	npm run lint
 	npm run typecheck
-	npm test
-	npm run build
 
-# Run tests once (vitest run)
+# Test suite.
 test:
 	npm test
+
+# Emit src/ to dist/.
+build:
+	npm run build
+
+# The CI gate: lint + typecheck + test + build.
+ci: check test build
+
+# Regenerate the README screenshot (tmux + freeze + rsvg-convert).
+screenshot:
+	npm run docs:screenshot

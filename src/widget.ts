@@ -1,8 +1,8 @@
 import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { orderedRoots } from "./context-message.js";
-import type { WorkmapNodeType } from "./node-types.js";
-import { countNodes, type WorkmapChild, type WorkmapRoot, type WorkmapView } from "./types.js";
+import type { WorkmapNodeType } from "./agent_api.js";
+import { orderedRoots } from "./agent_api.js";
+import { countNodes, type WorkmapChild, type WorkmapView } from "./types.js";
 
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;
@@ -87,11 +87,9 @@ export class WorkmapWidget {
 			const lines: string[] = [];
 			lines.push(theme.fg("accent", theme.bold(this.renderSummary(view, theme))));
 			if (view.goal) {
-				const left = `${theme.fg("accent", GOAL_GLYPH + " ")}${theme.fg("text", view.goal.title)}`;
+				const left = `${theme.fg("accent", `${GOAL_GLYPH} `)}${theme.fg("text", view.goal.title)}`;
 				lines.push(
-					view.goal.label
-						? this.align(left, theme.fg("dim", view.goal.label), width)
-						: truncateToWidth(left, width),
+					view.goal.label ? this.align(left, theme.fg("dim", view.goal.label), width) : truncateToWidth(left, width),
 				);
 			}
 			const ordered = orderedRoots(view.nodes);

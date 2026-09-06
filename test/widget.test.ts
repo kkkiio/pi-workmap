@@ -1,7 +1,7 @@
 import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
 import { type Component, type TUI, visibleWidth } from "@earendil-works/pi-tui";
 import { describe, expect, it, vi } from "vitest";
-import type { WorkmapDeclaration, WorkmapRoot } from "../src/types.js";
+import type { WorkmapRoot, WorkmapView } from "../src/types.js";
 import { WorkmapWidget } from "../src/widget.js";
 
 const goal = { title: "Stop random logouts", label: "long-term" };
@@ -18,14 +18,11 @@ const baseNodes: WorkmapRoot[] = [
 	{ type: "decision", title: "Which labels stay readable on narrow terminals?", label: "considering" },
 ];
 
-function makeView(withGoal: boolean, nodes: WorkmapRoot[]): WorkmapDeclaration {
+function makeView(withGoal: boolean, nodes: WorkmapRoot[]): WorkmapView {
 	return { ...(withGoal ? { goal } : {}), nodes };
 }
 
-function renderWidget(
-	view: WorkmapDeclaration,
-	width = 78,
-): { lines: string[]; requestRender: ReturnType<typeof vi.fn> } {
+function renderWidget(view: WorkmapView, width = 78): { lines: string[]; requestRender: ReturnType<typeof vi.fn> } {
 	let factory: ((tui: TUI, theme: Theme) => Component) | undefined;
 	const requestRender = vi.fn();
 	const ui = {

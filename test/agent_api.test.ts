@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { orderedRoots, renderStateMessage, renderTreeLines } from "../src/context-message.js";
+import { orderedRoots, renderStateMessage, renderTreeLines } from "../src/agent_api.js";
 import type { WorkmapRoot } from "../src/types.js";
 
 const goal = { title: "Stop random logouts", label: "long-term" };
