@@ -1,6 +1,6 @@
 # ADR 0015: 全量重写、set/add_drift 双工具与两层结构
 
-- Status: Accepted（取代 [ADR 0010](archive/0010-staleness-counter-reinjection.md)、[ADR 0011](archive/0011-nested-children-root-ids.md)、[ADR 0013](archive/0013-full-tree-widget-capacity-eviction.md)、[ADR 0014](archive/0014-guidelines-slimming-type-scoped-status.md)；部分取代 [ADR 0003](0003-no-blocker-node.md) 的 Task · blocked 面包屑通道）
+- Status: Accepted（取代 [ADR 0010](archive/0010-staleness-counter-reinjection.md)、[ADR 0011](archive/0011-nested-children-root-ids.md)、[ADR 0013](archive/0013-full-tree-widget-capacity-eviction.md)、[ADR 0014](archive/0014-guidelines-slimming-type-scoped-status.md)；部分取代 [ADR 0003](0003-no-blocker-node.md) 的 Task · blocked 面包屑通道；schema 层与 guidelines 的后续修订见 [ADR 0017](0017-set-goal-tool.md)、[ADR 0018](0018-status-to-label.md)）
 - Date: 2026-09-02（2026-09-06 修正：anchor 意图、容量改形与校验分层，见 Decision 3 与 Decision 5）
 
 ## Context
