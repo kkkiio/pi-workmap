@@ -19,8 +19,8 @@ pi install .
 Once the Agent starts working, a workmap stays pinned above the editor:
 
 ```text
-✦ Stop random logouts                                          long-term
 Workmap · 9 signals
+✦ Stop random logouts                                          long-term
 ⎇ The client-only fix assumes a single worker                  detected
 ◆ Where should refresh serialization live?                     considering
 ├─ ◇ Serialize in the client                                   candidate
@@ -31,7 +31,7 @@ Workmap · 9 signals
 ◎ Ship the flaky-auth regression test                          active
 ```
 
-- Every prompt, before acting, the Agent restates the complete signal map; the goal is distilled separately via `set_goal`, rendered as the header, and stable across rewrites; a mid-task course change is reported on the spot via `add_drift`, rendered directly below the goal.
+- Every prompt, before acting, the Agent restates the complete signal map; the goal is distilled separately via `set_goal` and stable across rewrites; a mid-task course change is reported on the spot via `add_drift`, rendered directly below the goal.
 - Something looks off? Say so in conversation — the Agent updates the map and its course.
 - Hard limits, enforced by rejection: at most 8 signals per declaration with ≤4 children each, and at most 10 signals in total, goal included.
 

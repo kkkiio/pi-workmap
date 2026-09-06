@@ -47,14 +47,14 @@ function renderWidget(
 }
 
 describe("WorkmapWidget", () => {
-	it("renders the goal header above the full tree at standard width (snapshot)", () => {
+	it("renders the goal row atop the full tree at standard width (snapshot)", () => {
 		const { lines } = renderWidget(makeView(true, baseNodes));
-		expect(lines[0]).toContain("✦ Stop random logouts");
-		expect(lines[1]).toContain("Workmap ·");
+		expect(lines[0]).toContain("Workmap ·");
+		expect(lines[1]).toContain("✦ Stop random logouts");
 		expect(lines.join("\n")).toMatchSnapshot();
 	});
 
-	it("renders without the header when no goal is set (snapshot)", () => {
+	it("renders without the goal row when no goal is set (snapshot)", () => {
 		const { lines } = renderWidget(makeView(false, baseNodes));
 		expect(lines[0]).toContain("Workmap ·");
 		expect(lines.join("\n")).toMatchSnapshot();

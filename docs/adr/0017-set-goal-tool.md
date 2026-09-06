@@ -11,29 +11,30 @@
 
 ## Decision
 
-1. **goal 移出 `set` 的节点列表**：`restate` 的类型 enum 剩 5 类（understanding / decision / option / task / drift）。goal 仍是 Signal——六个信号类型之一——只是写入通道按频率分开：`restate`（每轮全量重写常变信号）、`set_goal`（低频蒸馏）、`add_drift`（mid-loop 追加；drift 是唯一同类型双通道的信号，也可在 restate 里全量重写）。goal 槽位的唯一写入者是 `set_goal`（双写必打架，不留）。
-2. **`set_goal` 参数**：`{ title: string(1–120), status?: string(≤24) }`——与 goal 节点形状一致（保留 long-term 标注能力，ADR 0008 血统不断）；纯 properties，strict 子集全兼容。
-3. **渲染**：goal 是 map header（✦ + accent），不是树行；drift 悬挂其下（回归 ADR 0016 的表述）；快照 v7 = `{ goal?, nodes }`，v6→v7 迁移把 goal 根节点提取为 header 字段。
+1. **goal 移出 `restate` 的节点列表**：`restate` 的类型 enum 剩 5 类（understanding / decision / option / task / drift）。goal 仍是 Signal——六个信号类型之一——只是写入通道按频率分开：`restate`（每轮全量重写常变信号）、`set_goal`（低频蒸馏）、`add_drift`（mid-loop 追加；drift 是唯一同类型双通道的信号，也可在 restate 里全量重写）。goal 槽位的唯一写入者是 `set_goal`（双写必打架，不留）。
+2. **`set_goal` 参数**：`{ title: string(1–120), status→label: string(≤24) }`——与 goal 节点形状一致（保留 long-term 标注能力，ADR 0008 血统不断）；纯 properties，strict 子集全兼容。
+3. **渲染不变**：goal 仍渲染为置顶树行（✦ + accent，label 右对齐，ADR 0009 的 goal-first 排序保留），drift 紧随其后（ADR 0016 的表述回归）；本次修正**不改 widget 视觉结构**——变的是写入通道，不是屏上形态。快照 v7 = `{ goal?, nodes }`，v6→v7 迁移把 goal 根节点提取为独立槽位。
 4. **MUST 全量重写的范围相应收窄**：每轮重写 signals（不含 goal）；goal 由 `set_goal` 在意图形成/深化时写入。
-5. **容量**：roots ≤ 8、children ≤ 4 限 set 声明的形状；总信号 ≤10 兜底**含 goal**（goal 是信号，计数一视同仁）——set 与 add_drift 共用同一数字。`set: []` 清 signals 不清 goal（通道独立，槽位独立）。
-6. **无机械保证模型何时 `set_goal`**——guideline 引导 + 无 goal 时 header 缺席可见。观察，不立法（ADR 0015 的措辞层纪律）。
+5. **容量**：roots ≤ 8、children ≤ 4 限 restate 声明的形状；总信号 ≤10 兜底**含 goal**（goal 是信号，计数一视同仁）——restate 与 add_drift 共用同一数字。`set: []` 清 signals 不清 goal（通道独立，槽位独立）。
+6. **无机械保证模型何时 `set_goal`**——guideline 引导 + 无 goal 时 goal 行缺席可见。观察，不立法（ADR 0015 的措辞层纪律）。
 
 ### Guidelines（定稿措辞，2026-09-06 收缩）
 
 > 收缩：set_goal 条删（语义由 tool description 全承载，ADR 0014 的重复承载删除）；label 词例移入 schema description；decision/option 合并；understanding 词表定为 confirmed/assumed（inferred 零自发使用，信任判断是二元的：verified vs assumed）。
 
-1. You MUST re-declare the complete signal map via the `workmap` tool before your first action after every user prompt; an empty array clears the signals.
-2. You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When it resolves, record any lasting conclusion as a decision or understanding and drop the drift in your next rewrite.
-3. Use decision for deliberation or commitments — title a question while deliberating, and once decided append the conclusion ("Where should X live? → on the server"); use option only for considered alternatives under their decision.
-4. Use understanding for current facts, syntheses, and hypotheses; counterintuitive findings belong here precisely because they are easy to lose — label assumed until verified.
-5. Use task for actions you intend, are doing, or have done; a done title records side effects — what changed, what ran.
+1. You MUST restate the complete signal map before your first action after every user prompt; an empty array clears the signals.
+2. You MUST distill the user's ultimate want into the goal via `set_goal` before acting on a new or changed request — the destination, never the route; update it only when your reading of their intent deepens or the user corrects direction; the goal outlives signal rewrites.
+3. You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When it resolves, record any lasting conclusion as a decision or understanding and drop the drift in your next rewrite.
+4. Use decision for deliberation or commitments — title a question while deliberating, and once decided append the conclusion ("Where should X live? → on the server"); use option only for considered alternatives under their decision.
+5. Use understanding for current facts, syntheses, and hypotheses; counterintuitive findings belong here precisely because they are easy to lose — label assumed until verified.
+6. Use task for actions you intend, are doing, or have done; a done title records side effects — what changed, what ran.
 
-动词选择：**distill，不是 guess**。观测到的失败是"够不着"（从字面复制请求），不是"猜太满"——distill 断言终极意图已在用户的话里、指向挖掘；guess 给偷懒许可（浅猜也算完成，不确定时干脆跳过）。可证伪性不需要动词承载：reading 可能错，由产品结构的纠正通道兜底（"best present reading — a falsifiable paraphrase"）。若出现"假装蒸馏"（编造用户没说的意图）这一新失败模式，第一顺位修法是 description 加 "grounded in what the user actually said"，不是换动词。distill 的时机与语义由 set_goal 的 tool description 全量承载（"Distill the user's ultimate want — the destination, never the route; renders as the map header and outlives signal rewrites. Call it when acting on a new or changed request, and when your reading of the intent deepens or the user corrects direction."）
+动词选择：**distill，不是 guess**。观测到的失败是"够不着"（从字面复制请求），不是"猜太满"——distill 断言终极意图已在用户的话里、指向挖掘；guess 给偷懒许可（浅猜也算完成，不确定时干脆跳过）。可证伪性不需要动词承载：reading 可能错，由产品结构的纠正通道兜底（"best present reading — a falsifiable paraphrase"）。若出现"假装蒸馏"（编造用户没说的意图）这一新失败模式，第一顺位修法是 description 加 "grounded in what the user actually said"，不是换动词。distill 的时机与语义由 set_goal 的 tool description 全量承载（"Distill the user's ultimate want — the destination, never the route; outlives signal rewrites. Call it when acting on a new or changed request, and when your reading of the intent deepens or the user corrects direction."）。
 
 ## Consequences
 
 - 近目标污染的通道关闭；意图写入成为显式的一步（distill），与 concept.md 的蒸馏图对齐。
 - 双写冲突不存在（唯一写者）；goal 跨全量重写稳定，只有 `set_goal` 改变它。
-- 快照 v7；widget 契约：header + ≤8 root（各 ≤4 children），总信号 ≤10 兜底（计 goal）。
-- 后记（2026-09-06）：信号声明工具两度更名 `workmap` → `set_signals` → `restate`。Workmap 术语仍指含 goal header 的全图；工具只写 signals。定名 `restate` 的理由：写入语义是“重新陈述”——**未变也重发**（ADR 0015 的主场景）在 re- 前缀下顺畅，`rewrite` 对“没变还重写什么”有张力；`claim` 与 goal 本身的 claim 语义撞车且丢失原子替换含义；`declare` 丢掉“替换旧内容”。三工具构成 restate / set / add 的写入语义词汇表。措辞层同步：`re-declare` 统一为 `restate`。存储 entry type（`pi-workmap-state`）不变。
-- 开放问题：模型主动 `set_goal` 的时机质量（是否等得到蒸馏，还是又退回近目标复述）——header 缺席与 title 措辞是可见信号。
+- 快照 v7；widget 契约不变（summary + goal 行 + ≤8 root，各 ≤4 children），总信号 ≤10 兜底（计 goal）。
+- 后记（2026-09-06）：信号声明工具两度更名 `workmap` → `set_signals` → `restate`。Workmap 术语仍指含 goal 的全图；工具只写 signals。定名 `restate` 的理由：写入语义是"重新陈述"——**未变也重发**（ADR 0015 的主场景）在 re- 前缀下顺畅，`rewrite` 对"没变还重写什么"有张力；`claim` 与 goal 本身的 claim 语义撞车且丢失原子替换含义；`declare` 丢掉"替换旧内容"。三工具构成 restate / set / add 的写入语义词汇表。措辞层同步：`re-declare` 统一为 `restate`。存储 entry type（`pi-workmap-state`）不变。
+- 开放问题：模型主动 `set_goal` 的时机质量（是否等得到蒸馏，还是又退回近目标复述）——goal 行缺席与 title 措辞是可见信号。

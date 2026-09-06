@@ -76,7 +76,7 @@ async function capture(renderer: FreezeRenderer, outputName: string): Promise<vo
 	});
 	const captured = ansi.replace(/\r/g, "").split("\n");
 	const plain = captured.map((line) => line.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, ""));
-	const start = plain.findIndex((line) => line.includes("✦ Keep users signed in reliably"));
+	const start = plain.findIndex((line) => line.includes("Workmap · 8 signals"));
 	if (start < 0) throw new Error(`Workmap widget was not present in the captured terminal for ${outputName}`);
 	const border = plain.findIndex((line, index) => index > start && line.startsWith("─"));
 	if (border < 0) throw new Error("Could not locate the editor boundary below the workmap");

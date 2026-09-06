@@ -8,9 +8,9 @@ import { countNodes, type WorkmapChild, type WorkmapRoot, type WorkmapView } fro
 const MIN_LEFT_WIDTH = 20;
 // Every glyph occupies a two-column cell so double-width glyphs keep titles left-aligned.
 const GLYPH_CELL_WIDTH = 2;
-// The goal header glyph — goal is the intent header written through `set_goal`,
-// rendered above the tree rather than as a peer row (ADR 0017).
-const HEADER_GLYPH = "✦";
+// The goal row glyph — goal is the intent signal written through `set_goal`,
+// rendered as its own top row rather than a restate-written node (ADR 0017).
+const GOAL_GLYPH = "✦";
 
 export const PRESENTATION: Record<
 	WorkmapNodeType,
@@ -77,23 +77,23 @@ export class WorkmapWidget {
 		this.ui = undefined;
 	}
 
-	// Single rendering mode: the goal header plus the complete two-layer tree,
-	// every node visible (ADR 0015). The ≤10 backstop in state guarantees this
-	// never overflows — there is nothing hidden.
+	// Single rendering mode: the complete two-layer tree, every node visible
+	// (ADR 0015). The ≤10 backstop in state guarantees this never overflows —
+	// there is nothing hidden. The goal row leads (ADR 0009), drift follows.
 	private render(width: number, theme: Theme): string[] {
 		try {
 			const view = this.getView();
 			if ((view.nodes.length === 0 && !view.goal) || width < 8) return [];
 			const lines: string[] = [];
+			lines.push(theme.fg("accent", theme.bold(this.renderSummary(view, theme))));
 			if (view.goal) {
-				const title = `${HEADER_GLYPH} ${view.goal.title}`;
+				const left = `${theme.fg("accent", GOAL_GLYPH + " ")}${theme.fg("text", view.goal.title)}`;
 				lines.push(
 					view.goal.label
-						? this.align(theme.fg("accent", theme.bold(title)), theme.fg("dim", view.goal.label), width)
-						: theme.fg("accent", theme.bold(title)),
+						? this.align(left, theme.fg("dim", view.goal.label), width)
+						: truncateToWidth(left, width),
 				);
 			}
-			lines.push(theme.fg("accent", theme.bold(this.renderSummary(view, theme))));
 			const ordered = orderedRoots(view.nodes);
 			for (const root of ordered) {
 				lines.push(this.renderNode(root, "", width, theme));

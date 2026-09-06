@@ -1,8 +1,8 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`WorkmapWidget > drops labels before squeezing titles on narrow widths (snapshot) 1`] = `
-"✦ Stop random logouts
-Workmap · 6 signals ·[0m...[0m
+"Workmap · 6 signals ·[0m...[0m
+✦ Stop random logouts
 ⎇  Implementation is [0m...[0m
 ◆  Use session-global[0m...[0m
 └─ ◎  Render the pers[0m...[0m
@@ -11,8 +11,8 @@ Workmap · 6 signals ·[0m...[0m
 `;
 
 exports[`WorkmapWidget > keeps labels right-aligned when there is room (snapshot) 1`] = `
-"✦ Stop random logouts                              long-term
-Workmap · 6 signals · 1 drift
+"Workmap · 6 signals · 1 drift
+✦ Stop random logouts                              long-term
 ⎇  Implementation is becoming a todo manager        detected
 ◆  Use session-global snapshots                       chosen
 └─ ◎  Render the persistent widget                    active
@@ -21,8 +21,8 @@ Workmap · 6 signals · 1 drift
 `;
 
 exports[`WorkmapWidget > renders past the former compact budget without hidden counts (snapshot) 1`] = `
-"✦ Stop random logouts                                                long-term
-Workmap · 9 signals · 1 drift
+"Workmap · 9 signals · 1 drift
+✦ Stop random logouts                                                long-term
 ⎇  Implementation is becoming a todo manager                          detected
 ◆  Use session-global snapshots                                         chosen
 └─ ◎  Render the persistent widget                                      active
@@ -33,9 +33,9 @@ Workmap · 9 signals · 1 drift
 ◎  Extra task three"
 `;
 
-exports[`WorkmapWidget > renders the goal header above the full tree at standard width (snapshot) 1`] = `
-"✦ Stop random logouts                                                long-term
-Workmap · 6 signals · 1 drift
+exports[`WorkmapWidget > renders the goal row atop the full tree at standard width (snapshot) 1`] = `
+"Workmap · 6 signals · 1 drift
+✦ Stop random logouts                                                long-term
 ⎇  Implementation is becoming a todo manager                          detected
 ◆  Use session-global snapshots                                         chosen
 └─ ◎  Render the persistent widget                                      active
@@ -43,7 +43,7 @@ Workmap · 6 signals · 1 drift
 ◆  Which labels stay readable on narrow terminals?                 considering"
 `;
 
-exports[`WorkmapWidget > renders without the header when no goal is set (snapshot) 1`] = `
+exports[`WorkmapWidget > renders without the goal row when no goal is set (snapshot) 1`] = `
 "Workmap · 5 signals · 1 drift
 ⎇  Implementation is becoming a todo manager                          detected
 ◆  Use session-global snapshots                                         chosen
