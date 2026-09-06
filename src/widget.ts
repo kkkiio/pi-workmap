@@ -2,7 +2,7 @@ import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent"
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { orderedRoots } from "./context-message.js";
 import type { WorkmapNodeType } from "./node-types.js";
-import { type WorkmapRoot, type WorkmapView } from "./types.js";
+import { countNodes, type WorkmapChild, type WorkmapRoot, type WorkmapView } from "./types.js";
 
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;

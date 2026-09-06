@@ -81,7 +81,7 @@ export class WorkmapState {
 		if (countNodes(next) + (this.goal ? 1 : 0) > MAX_WORKMAP_NODES) {
 			return {
 				changed: false,
-				error: `The map is limited to ${MAX_WORKMAP_NODES} signals (goal and children included) — keep the ones that matter most and re-declare`,
+				error: `The map is limited to ${MAX_WORKMAP_NODES} signals (goal and children included) — keep the ones that matter most and restate`,
 			};
 		}
 		const changed = JSON.stringify(next) !== JSON.stringify(this.roots);
@@ -116,7 +116,7 @@ export class WorkmapState {
 		if (countNodes([...this.roots, node]) + (this.goal ? 1 : 0) > MAX_WORKMAP_NODES) {
 			return {
 				changed: false,
-				error: `The map is full (${MAX_WORKMAP_NODES} signals) — re-declare it with the set_signals tool to make room`,
+				error: `The map is full (${MAX_WORKMAP_NODES} signals) — restate the map to make room`,
 			};
 		}
 		this.roots.push(node);
@@ -127,7 +127,7 @@ export class WorkmapState {
 	private validateNodes(nodes: WorkmapRoot[]): string | undefined {
 		if (!Array.isArray(nodes)) return "nodes must be an array";
 		if (nodes.length > MAX_ROOTS) {
-			return `The map allows at most ${MAX_ROOTS} root signals — keep the ones that matter most and re-declare`;
+			return `The map allows at most ${MAX_ROOTS} root signals — keep the ones that matter most and restate`;
 		}
 		for (const raw of nodes) {
 			if (!raw || typeof raw !== "object") return "Every workmap root must be an object";

@@ -120,11 +120,11 @@ describe("workmap extension lifecycle", () => {
 			const { handlers, context, getTool } = setup();
 			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
 			const set = (nodes: WorkmapRoot[]) =>
-				getTool("set_signals").execute("call", { set: nodes }, undefined, undefined, undefined);
+				getTool("restate").execute("call", { set: nodes }, undefined, undefined, undefined);
 
 			await set(baseMap);
 			const fresh = await beforeAgentStart(handlers, context);
-			expect(fresh?.message?.content).toContain("Re-declare this map with the set_signals tool on every user prompt");
+			expect(fresh?.message?.content).toContain("Restate this map on every user prompt");
 			expect(fresh?.message?.content).not.toContain("user prompts stale");
 
 			const stale = await beforeAgentStart(handlers, context);
@@ -152,7 +152,7 @@ describe("workmap extension lifecycle", () => {
 		it("keeps the counter running across tree navigation", async () => {
 			const { handlers, context, getTool } = setup();
 			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-			await getTool("set_signals").execute("call", { set: baseMap }, undefined, undefined, undefined);
+			await getTool("restate").execute("call", { set: baseMap }, undefined, undefined, undefined);
 			await beforeAgentStart(handlers, context);
 			await beforeAgentStart(handlers, context);
 			await handlers.get("session_tree")?.({ type: "session_tree" } as never, context);
@@ -175,7 +175,7 @@ describe("workmap extension lifecycle", () => {
 			expect(drift.details.error).toBeUndefined();
 
 			await getTool("set_goal").execute("call", { title: "Stop random logouts" }, undefined, undefined, undefined);
-			await getTool("set_signals").execute("call", { set: [] }, undefined, undefined, undefined);
+			await getTool("restate").execute("call", { set: [] }, undefined, undefined, undefined);
 			const injected = await beforeAgentStart(handlers, context);
 			expect(injected?.message?.content).toContain("goal: Stop random logouts");
 			expect(injected?.message?.content).not.toContain("drift [detected]");
@@ -184,11 +184,11 @@ describe("workmap extension lifecycle", () => {
 		it("does not re-anchor the map on a rejected set", async () => {
 			const { handlers, context, getTool } = setup();
 			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-			await getTool("set_signals").execute("call", { set: baseMap }, undefined, undefined, undefined);
+			await getTool("restate").execute("call", { set: baseMap }, undefined, undefined, undefined);
 			await beforeAgentStart(handlers, context);
 
 			// A rejected set changed nothing: it must not reset the stale counter.
-			await getTool("set_signals").execute(
+			await getTool("restate").execute(
 				"call",
 				{
 					set: [

@@ -155,14 +155,14 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	};
 
 	pi.registerTool({
-		name: "set_signals",
+		name: "restate",
 		label: "Set signals",
 		description:
-			"Declare the COMPLETE signal map — your user-visible working model for the current session. Replaces everything: call it on every user prompt before your first action, passing the full tree; an empty array clears the signals. The goal is declared separately via set_goal; for a mid-task course change, use add_drift.",
+			"Restate the COMPLETE signal map — your user-visible working model for the current session. Replaces everything: call it on every user prompt before your first action, passing the full tree; an empty array clears the signals. The goal is declared separately via set_goal; for a mid-task course change, use add_drift.",
 		promptSnippet:
 			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
 		promptGuidelines: [
-			"You MUST re-declare the complete signal map via `set_signals` before your first action after every user prompt; an empty array clears the signals.",
+			"You MUST restate the complete signal map before your first action after every user prompt; an empty array clears the signals.",
 			"You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When it resolves, record any lasting conclusion as a decision or understanding and drop the drift in your next rewrite.",
 			'Use decision for deliberation or commitments — title a question while deliberating, and once decided append the conclusion ("Where should X live? → on the server"); use option only for considered alternatives under their decision.',
 			"Use understanding for current facts, syntheses, and hypotheses; counterintuitive findings belong here precisely because they are easy to lose — label assumed until verified.",
@@ -181,11 +181,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		},
 		renderCall(args, theme) {
 			const additions = (args as { set?: unknown[] }).set?.length ?? 0;
-			return new Text(
-				theme.fg("toolTitle", theme.bold("set_signals ")) + theme.fg("muted", `set · ${additions}`),
-				0,
-				0,
-			);
+			return new Text(theme.fg("toolTitle", theme.bold("restate ")) + theme.fg("muted", `${additions} signals`), 0, 0);
 		},
 		renderResult(result, { expanded }, theme) {
 			return renderDetails(result, expanded, theme);
