@@ -1,4 +1,4 @@
-import type { WorkmapChild, WorkmapRoot } from "./types.js";
+import type { WorkmapChild, WorkmapGoal, WorkmapRoot } from "./types.js";
 
 export interface StateMessageMeta {
 	/**
@@ -11,16 +11,12 @@ export interface StateMessageMeta {
 }
 
 /**
- * Display order for roots: goal leads (the anchor precedes the details), drift
- * comes right after (the user's first question after "is the direction right"
- * is "where did we stray"), the rest keeps insertion order.
+ * Display order for roots: drift leads (the goal header sits above the tree;
+ * the user's first question after "is the direction right" is "where did we
+ * stray"), the rest keeps insertion order.
  */
 export function orderedRoots(roots: WorkmapRoot[]): WorkmapRoot[] {
-	return [
-		...roots.filter((root) => root.type === "goal"),
-		...roots.filter((root) => root.type === "drift"),
-		...roots.filter((root) => root.type !== "goal" && root.type !== "drift"),
-	];
+	return [...roots.filter((root) => root.type === "drift"), ...roots.filter((root) => root.type !== "drift")];
 }
 
 /**
@@ -32,8 +28,8 @@ export function renderTreeLines(roots: WorkmapRoot[]): string[] {
 	const ordered = orderedRoots(roots);
 	const lines: string[] = [];
 	const visit = (node: WorkmapChild, depth: number): void => {
-		const status = node.status ? ` [${node.status}]` : "";
-		lines.push(`${"  ".repeat(depth)}${node.type}${status}: ${node.title}`);
+		const label = node.label ? ` [${node.label}]` : "";
+		lines.push(`${"  ".repeat(depth)}${node.type}${label}: ${node.title}`);
 	};
 	for (const root of ordered) {
 		visit(root, 0);
@@ -44,17 +40,22 @@ export function renderTreeLines(roots: WorkmapRoot[]): string[] {
 
 /**
  * Render the workmap as the persisted context message, injected fresh on every
- * agent run. The footer restates the two writing surfaces; when the map has
- * gone stale, the footer escalates from routine reminder to pointed notice.
+ * agent run. The goal header leads when present; the footer restates the two
+ * writing surfaces, and escalates from routine reminder to pointed notice when
+ * the map has gone stale.
  */
-export function renderStateMessage(nodes: WorkmapRoot[], meta: StateMessageMeta): string {
+export function renderStateMessage(
+	nodes: WorkmapRoot[],
+	goal: WorkmapGoal | undefined,
+	meta: StateMessageMeta,
+): string {
 	const stale = meta.promptsSinceRewrite >= 2;
 	const footer = stale
 		? `The workmap is ${meta.promptsSinceRewrite} user prompts stale — re-declare it with the workmap tool before acting.`
 		: "Re-declare this map with the workmap tool on every user prompt; add_drift the moment you change course mid-task.";
 	return [
 		"<workmap-state>",
-		"Live state of the shared working model you maintain for this session; a state anchor, not conversation to react to.",
+		...(goal ? ["", `goal${goal.label ? ` [${goal.label}]` : ""}: ${goal.title}`] : []),
 		"",
 		...renderTreeLines(nodes),
 		"",

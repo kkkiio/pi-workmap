@@ -1,23 +1,31 @@
 import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent";
 import { type Component, type TUI, visibleWidth } from "@earendil-works/pi-tui";
 import { describe, expect, it, vi } from "vitest";
-import type { WorkmapRoot } from "../src/types.js";
+import type { WorkmapDeclaration, WorkmapRoot } from "../src/types.js";
 import { WorkmapWidget } from "../src/widget.js";
 
-const nodes: WorkmapRoot[] = [
-	{ type: "goal", title: "Keep human and Agent aligned", status: "long-term" },
+const goal = { title: "Stop random logouts", label: "long-term" };
+
+const baseNodes: WorkmapRoot[] = [
 	{
 		type: "decision",
 		title: "Use session-global snapshots",
-		status: "chosen",
-		children: [{ type: "task", title: "Render the persistent widget", status: "active" }],
+		label: "chosen",
+		children: [{ type: "task", title: "Render the persistent widget", label: "active" }],
 	},
 	{ type: "understanding", title: "Tree navigation must not roll back the map" },
-	{ type: "drift", title: "Implementation is becoming a todo manager", status: "detected" },
-	{ type: "decision", title: "Which statuses stay readable on narrow terminals?", status: "considering" },
+	{ type: "drift", title: "Implementation is becoming a todo manager", label: "detected" },
+	{ type: "decision", title: "Which labels stay readable on narrow terminals?", label: "considering" },
 ];
 
-function renderWidget(width = 78): { lines: string[]; requestRender: ReturnType<typeof vi.fn> } {
+function makeView(withGoal: boolean, nodes: WorkmapRoot[]): WorkmapDeclaration {
+	return { ...(withGoal ? { goal } : {}), nodes };
+}
+
+function renderWidget(
+	view: WorkmapDeclaration,
+	width = 78,
+): { lines: string[]; requestRender: ReturnType<typeof vi.fn> } {
 	let factory: ((tui: TUI, theme: Theme) => Component) | undefined;
 	const requestRender = vi.fn();
 	const ui = {
@@ -31,7 +39,7 @@ function renderWidget(width = 78): { lines: string[]; requestRender: ReturnType<
 			get: (_target, property) => (property === "fg" ? (_color: string, text: string) => text : (text: string) => text),
 		},
 	) as Theme;
-	const widget = new WorkmapWidget(() => structuredClone(nodes));
+	const widget = new WorkmapWidget(() => structuredClone(view));
 	widget.attach(ui);
 	const component = factory?.({ requestRender } as unknown as TUI, theme);
 	if (!component) throw new Error("Widget factory was not registered");
@@ -39,35 +47,43 @@ function renderWidget(width = 78): { lines: string[]; requestRender: ReturnType<
 }
 
 describe("WorkmapWidget", () => {
-	it("renders the full tree at standard width (snapshot)", () => {
-		const { lines } = renderWidget();
+	it("renders the goal header above the full tree at standard width (snapshot)", () => {
+		const { lines } = renderWidget(makeView(true, baseNodes));
+		expect(lines[0]).toContain("✦ Stop random logouts");
+		expect(lines[1]).toContain("Workmap ·");
+		expect(lines.join("\n")).toMatchSnapshot();
+	});
+
+	it("renders without the header when no goal is set (snapshot)", () => {
+		const { lines } = renderWidget(makeView(false, baseNodes));
+		expect(lines[0]).toContain("Workmap ·");
 		expect(lines.join("\n")).toMatchSnapshot();
 	});
 
 	it("renders past the former compact budget without hidden counts (snapshot)", () => {
-		nodes.push(
-			{ type: "task", title: "Extra task one" },
-			{ type: "task", title: "Extra task two" },
-			{ type: "task", title: "Extra task three" },
-		);
-		const { lines } = renderWidget();
-		expect(lines).toHaveLength(1 + 9);
-		expect(lines.join("\n")).toMatchSnapshot();
-		nodes.splice(5, 3);
-	});
-
-	it("drops statuses before squeezing titles on narrow widths (snapshot)", () => {
-		const { lines } = renderWidget(24);
+		const nodes = [
+			...baseNodes,
+			{ type: "task" as const, title: "Extra task one" },
+			{ type: "task" as const, title: "Extra task two" },
+			{ type: "task" as const, title: "Extra task three" },
+		];
+		const { lines } = renderWidget(makeView(true, nodes));
+		expect(lines).toHaveLength(10);
 		expect(lines.join("\n")).toMatchSnapshot();
 	});
 
-	it("keeps statuses right-aligned when there is room (snapshot)", () => {
-		const { lines } = renderWidget(60);
+	it("drops labels before squeezing titles on narrow widths (snapshot)", () => {
+		const { lines } = renderWidget(makeView(true, baseNodes), 24);
+		expect(lines.join("\n")).toMatchSnapshot();
+	});
+
+	it("keeps labels right-aligned when there is room (snapshot)", () => {
+		const { lines } = renderWidget(makeView(true, baseNodes), 60);
 		expect(lines.join("\n")).toMatchSnapshot();
 	});
 
 	it("aligns every title to its depth column despite double-width glyphs", () => {
-		const { lines } = renderWidget();
+		const { lines } = renderWidget(makeView(true, baseNodes));
 		const flat: { title: string; depth: number }[] = [];
 		const walk = (list: WorkmapRoot[], depth: number): void => {
 			for (const node of list) {
@@ -75,7 +91,7 @@ describe("WorkmapWidget", () => {
 				for (const child of node.children ?? []) flat.push({ title: child.title, depth: depth + 1 });
 			}
 		};
-		walk(nodes, 0);
+		walk(baseNodes, 0);
 		for (const node of flat) {
 			const line = lines.find((candidate) => candidate.includes(node.title));
 			if (!line) continue;

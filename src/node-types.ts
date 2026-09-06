@@ -3,29 +3,29 @@
  * (index.ts), validation (state.ts), and prompt guidelines.
  *
  * Types are cut by epistemic role: what the signal plays in the shared working
- * model (where we are going, what we believe, what we have chosen, what we are
- * doing, where we have strayed). Every type must earn its place — each one
- * costs glyph vocabulary, color semantics, and classification accuracy
- * (ADR 0003, ADR 0005), so types whose routing practice never materializes get
- * deleted rather than tolerated.
+ * model (what we believe, what we have chosen, what we are doing, where we
+ * have strayed). Every type must earn its place — each one costs glyph
+ * vocabulary, color semantics, and classification accuracy (ADR 0003, ADR
+ * 0005), so types whose routing practice never materializes get deleted rather
+ * than tolerated.
+ *
+ * The goal is not a node type: it is the intent header, written through the
+ * dedicated `set_goal` tool and rendered above the tree (ADR 0017). Mixing it
+ * into the per-prompt signal rewrite turned it into a task restatement.
  */
 
 export const WORKMAP_NODE_TYPES = [
-	// The Agent's best present reading of what the user wants — a falsifiable
-	// paraphrase and the anchor every other signal is measured against. A
-	// goal names the destination, never the route (routes are decisions).
-	"goal",
 	// A fact, synthesis, inference, or hypothesis the Agent currently uses.
 	// Counterintuitive findings belong here precisely because they are easy to
-	// lose; unverified premises are marked with the `hypothesis` status rather
-	// than stated as fact.
+	// lose; the label marks verification level — confirmed/inferred for
+	// established ground, hypothesis for an unverified premise.
 	"understanding",
 	// A choice being deliberated or already made. While deliberating the title
 	// is a question; once decided the conclusion is appended ("…? → result"),
 	// keeping the framing of the decision space visible.
 	"decision",
 	// A considered alternative under its parent decision. A tentative answer to
-	// an open question is an `understanding · hypothesis`, not an option.
+	// an open question is an understanding, not an option.
 	"option",
 	// An action the Agent declares it intends to do, is doing, or has done.
 	// `done` titles record side effects (what changed, what ran): recent done
@@ -41,7 +41,6 @@ export type WorkmapNodeType = (typeof WORKMAP_NODE_TYPES)[number];
 
 /** One scannable sentence per type, reused in schema descriptions. */
 export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
-	goal: "The Agent's best present reading of what the user wants — the falsifiable anchor of the map",
 	understanding: "A fact, synthesis, inference, or hypothesis the Agent currently uses",
 	decision: "A choice being deliberated or already made; title it as a question while considering",
 	option: "A considered alternative under its parent decision",
@@ -50,27 +49,27 @@ export const NODE_TYPE_DESCRIPTIONS: Record<WorkmapNodeType, string> = {
 };
 
 /**
- * Recommended status vocabulary per type. `status` itself stays a free-form
- * display annotation — no state machine (ADR 0003). The lists exist so
- * guidelines, schema descriptions, and any future validation share one source
- * and keep wording from drifting. An unlabeled goal reads as the current
- * focus; `long-term` optionally marks a standing project-level direction.
+ * Recommended label vocabulary per type. `label` itself stays a free-form
+ * display annotation — no state machine (ADR 0003), and per the validation
+ * layering (ADR 0015) vocabulary is wording, never validation: it lives in
+ * schema descriptions and guidelines, and is adjusted when it drifts. The
+ * lists exist so guidelines and schema descriptions share one source.
+ * understanding's ladder follows the model prior the session data exposed:
+ * models mark verification level, confirmed >> hypothesis.
  */
-export const DECISION_STATUSES = ["considering", "chosen"] as const;
-export const UNDERSTANDING_STATUSES = ["observed", "inferred", "hypothesis"] as const;
-export const TASK_STATUSES = ["pending", "active", "done"] as const;
-export const OPTION_STATUSES = ["candidate"] as const;
-export const DRIFT_STATUSES = ["detected"] as const;
+export const DECISION_LABELS = ["considering", "chosen"] as const;
+export const UNDERSTANDING_LABELS = ["confirmed", "inferred", "hypothesis"] as const;
+export const TASK_LABELS = ["pending", "active", "done"] as const;
 
 /**
  * Type invariants. Enforced where noted; otherwise taught in promptGuidelines.
  *
- * - A non-empty map carries at least one goal (enforced in state.ts) — the
- *   anchor the rest of the map is read against; `set: []` — clearing — is
- *   exempt. The anchor is guaranteed by validation, not prompt discipline.
+ * - Validation layering (ADR 0015): declaration-structure constraints (node
+ *   enum, title 1–120, label ≤24, roots ≤8, children ≤4, depth 2) live in
+ *   the set schema; the state layer only backstops the UI invariant (total
+ *   nodes ≤10); everything semantic (label vocabulary, title conventions,
+ * option placement) is wording and never enforced.
  * - Options live only under their decision (guideline).
- * - Factual questions get no node type: investigate directly, ask the user in
- *   conversation, or record a tentative answer as `understanding · hypothesis`.
- * - There is no `blocked` status. When work cannot proceed the Agent stops and
+ * - There is no `blocked` label. When work cannot proceed the Agent stops and
  *   asks in conversation; waiting for a user decision is `decision · considering`.
  */

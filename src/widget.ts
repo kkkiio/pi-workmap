@@ -2,17 +2,20 @@ import type { ExtensionUIContext, Theme } from "@earendil-works/pi-coding-agent"
 import { type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import { orderedRoots } from "./context-message.js";
 import type { WorkmapNodeType } from "./node-types.js";
-import { countNodes, type WorkmapChild, type WorkmapRoot } from "./types.js";
+import { countNodes, type WorkmapChild, type WorkmapRoot, type WorkmapView } from "./types.js";
 
 // Titles stay readable only with at least this many columns; below it, right-aligned labels are dropped.
 const MIN_LEFT_WIDTH = 20;
 // Every glyph occupies a two-column cell so double-width glyphs keep titles left-aligned.
 const GLYPH_CELL_WIDTH = 2;
+// The goal header glyph — goal is the intent header written through `set_goal`,
+// rendered above the tree rather than as a peer row (ADR 0017).
+const HEADER_GLYPH = "✦";
+
 export const PRESENTATION: Record<
 	WorkmapNodeType,
 	{ glyph: string; glyphColor: "accent" | "error" | "warning" | "text" }
 > = {
-	goal: { glyph: "✦", glyphColor: "accent" },
 	understanding: { glyph: "•", glyphColor: "text" },
 	decision: { glyph: "◆", glyphColor: "accent" },
 	option: { glyph: "◇", glyphColor: "text" },
@@ -30,7 +33,7 @@ export class WorkmapWidget {
 	private tui: TUI | undefined;
 	private registered = false;
 
-	constructor(private readonly getNodes: () => WorkmapRoot[]) {}
+	constructor(private readonly getView: () => WorkmapView) {}
 
 	attach(ui: ExtensionUIContext): void {
 		if (this.ui !== ui && this.registered && this.ui) this.ui.setWidget("workmap", undefined);
@@ -42,7 +45,8 @@ export class WorkmapWidget {
 
 	update(): void {
 		if (!this.ui) return;
-		if (this.getNodes().length === 0) {
+		const view = this.getView();
+		if (view.nodes.length === 0 && !view.goal) {
 			if (this.registered) this.ui.setWidget("workmap", undefined);
 			this.registered = false;
 			this.tui = undefined;
@@ -73,15 +77,24 @@ export class WorkmapWidget {
 		this.ui = undefined;
 	}
 
-	// Single rendering mode: the complete two-layer tree, every node visible
-	// (ADR 0015). The node cap in state guarantees this never overflows — there
-	// is nothing hidden.
+	// Single rendering mode: the goal header plus the complete two-layer tree,
+	// every node visible (ADR 0015). The ≤10 backstop in state guarantees this
+	// never overflows — there is nothing hidden.
 	private render(width: number, theme: Theme): string[] {
 		try {
-			const nodes = this.getNodes();
-			if (nodes.length === 0 || width < 8) return [];
-			const lines = [theme.fg("accent", theme.bold(this.renderSummary(nodes, theme)))];
-			const ordered = orderedRoots(nodes);
+			const view = this.getView();
+			if ((view.nodes.length === 0 && !view.goal) || width < 8) return [];
+			const lines: string[] = [];
+			if (view.goal) {
+				const title = `${HEADER_GLYPH} ${view.goal.title}`;
+				lines.push(
+					view.goal.label
+						? this.align(theme.fg("accent", theme.bold(title)), theme.fg("dim", view.goal.label), width)
+						: theme.fg("accent", theme.bold(title)),
+				);
+			}
+			lines.push(theme.fg("accent", theme.bold(this.renderSummary(view.nodes, theme))));
+			const ordered = orderedRoots(view.nodes);
 			for (const root of ordered) {
 				lines.push(this.renderNode(root, "", width, theme));
 				const children = root.children ?? [];
@@ -112,8 +125,8 @@ export class WorkmapWidget {
 	private renderNode(node: WorkmapChild, prefix: string, width: number, theme: Theme): string {
 		const presentation = PRESENTATION[node.type];
 		const left = `${theme.fg("dim", prefix)}${theme.fg(presentation.glyphColor, glyphCell(node.type))} ${theme.fg("text", node.title)}`;
-		if (!node.status) return truncateToWidth(left, width);
-		return this.align(left, theme.fg("dim", node.status), width);
+		if (!node.label) return truncateToWidth(left, width);
+		return this.align(left, theme.fg("dim", node.label), width);
 	}
 
 	private align(left: string, right: string, width: number): string {

@@ -14,7 +14,7 @@
 │   └── codex-review.yml              # PR merge gate: pass requires a Codex review signal at current HEAD and no unresolved review threads
 ├── src/
 │   ├── index.ts                      # Extension lifecycle, tools, and state message injection
-│   ├── node-types.ts                 # Node type semantics, per-type status vocabulary, invariants
+│   ├── node-types.ts                 # Node type semantics, per-type label vocabulary, invariants
 │   ├── session-entry.ts              # Snapshot wire format and session-file persistence
 │   ├── context-message.ts            # Persisted workmap-state message rendering
 │   ├── state.ts                      # Validated session-global snapshots
@@ -42,14 +42,16 @@ Keep session semantics in `src/state.ts`, presentation in `src/widget.ts`, and P
 - **Mental model** — Each party's internal representation of the work. The gap between the user's and the Agent's is the problem; mental models are not directly shareable.
 - **Shared working model** — Provisional common ground created when the user can inspect and correct the Agent's declared workmap.
 - **Signal** — One typed workmap node that materially helps the user understand or correct the Agent's direction.
-- **Goal** — The Agent's current reading of what the user ultimately wants from this session; the anchor every other signal is measured against. A corrected goal is a reward, so declare it early even at low confidence. It names the destination, never the route (routes are Decisions). Update it only when the reading of the user's intent changes or deepens — not when the work phase shifts; phase changes surface through active Tasks. `long-term` optionally marks a standing project-level direction.
+- **Goal** — The Agent's current reading of what the user ultimately wants from this session; the anchor every other signal is measured against. A corrected goal is a reward, so declare it early even at low confidence. It names the destination, never the route (routes are Decisions). Written through the dedicated `set_goal` tool (ADR 0017) — not inside signal rewrites — and rendered as the map header, stable across rewrites. Update it only when the reading of the user's intent deepens or the user corrects direction; `long-term` optionally marks a standing project-level direction.
 - **Understanding** — A fact, synthesis, inference, or hypothesis the Agent currently uses. Mark unverified premises explicitly as `hypothesis` rather than stating them as fact.
 - **Decision** — A choice being deliberated or a commitment already made. Title it as a question while deliberating; once decided, append the conclusion to the title ("…? → conclusion") rather than rewriting it.
-- **Option** — A considered alternative for a Decision. A tentative answer to an open question is an Understanding with status `hypothesis`, not an Option.
+- **Option** — A considered alternative for a Decision. A tentative answer to an open question is an Understanding with label `hypothesis`, not an Option.
 - **Task** — An action the Agent declares it intends, is doing, or has done; a `done` title records side effects (what changed, what ran), serving as the map's recent behavior ledger. One level of children expresses supporting structure only, never execution tracking (dependencies, progress rollups, or completion archives). Factual questions get no node type: investigate directly, or ask the user in conversation when only they can answer.
 - **Drift** — A detected mismatch between the Agent's direction and user intent or the declared workmap; rendered directly below the Goal.
 
-Status labels are type-scoped; the recommended vocabulary per type lives in `src/node-types.ts` (goal: unlabeled reads as the current focus, `long-term` optionally marks a standing project-level direction; decision: considering/chosen; understanding: hypothesis; task: pending/active/done). The map is capped at 10 nodes (children included); a non-empty map must carry at least one goal — violations and over-capacity sets are rejected whole, never silently pruned (ADR 0015).
+- **Drift** — A detected mismatch between the Agent's direction and user intent or the declared workmap; rendered directly below the Goal header.
+
+Labels are type-scoped; the recommended vocabulary per type lives in `src/node-types.ts` (goal: unlabeled reads as the current focus, `long-term` optionally marks a standing project-level direction; decision: considering/chosen; understanding: confirmed/inferred/hypothesis; task: pending/active/done). Vocabulary is wording (ADR 0015), never validation. Structural limits: at most 8 signals per `set` declaration with ≤4 children each, and at most 10 signals in total (children included) — violations and over-capacity sets are rejected whole, never silently pruned (ADR 0015).
 
 ## Policies & Mandatory Rules
 

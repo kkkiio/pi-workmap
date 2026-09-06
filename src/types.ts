@@ -4,7 +4,7 @@ import type { WorkmapNodeType } from "./node-types.js";
 export interface WorkmapChild {
 	type: WorkmapNodeType;
 	title: string;
-	status?: string;
+	label?: string;
 }
 
 /** A root-level signal — the only layer allowed to carry children (ADR 0015). */
@@ -12,11 +12,24 @@ export interface WorkmapRoot extends WorkmapChild {
 	children?: WorkmapChild[];
 }
 
+/** The intent header: written only through `set_goal`, rendered above the tree (ADR 0017). */
+export interface WorkmapGoal {
+	title: string;
+	label?: string;
+}
+
+/** What the workmap carries: the intent header plus the signal tree. */
+export interface WorkmapView {
+	goal?: WorkmapGoal;
+	nodes: WorkmapRoot[];
+}
+
 export interface WorkmapToolDetails {
-	version: 5;
-	action: "set" | "add";
+	version: 7;
+	action: "set" | "add" | "set_goal";
 	changed: boolean;
 	error?: string;
+	goal?: WorkmapGoal;
 	nodes: WorkmapRoot[];
 }
 

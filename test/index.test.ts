@@ -10,18 +10,16 @@ import { WORKMAP_ENTRY_TYPE, WORKMAP_SNAPSHOT_VERSION, type WorkmapSnapshot } fr
 import type { WorkmapRoot } from "../src/types.js";
 
 const baseMap: WorkmapRoot[] = [
-	{ type: "goal", title: "Keep the auth layer trustworthy", status: "long-term" },
-	{ type: "goal", title: "Ship the staleness sensor", status: "current" },
+	{ type: "decision", title: "Use session-global snapshots", label: "chosen" },
+	{ type: "understanding", title: "Tree navigation must not roll back the map" },
 ];
 
 describe("workmap extension lifecycle", () => {
 	it("inherits the session-global workmap when a fork omits the latest branch", async () => {
 		const snapshot: WorkmapSnapshot = {
 			version: WORKMAP_SNAPSHOT_VERSION,
-			nodes: [
-				{ type: "goal", title: "Keep the auth layer trustworthy", status: "long-term" },
-				{ type: "goal", title: "Keep the latest session direction", status: "current" },
-			],
+			goal: { title: "Stop random logouts", label: "long-term" },
+			nodes: [...baseMap, { type: "task", title: "Keep the latest session direction" }],
 		};
 		const sourceSession = SessionManager.inMemory();
 		sourceSession.appendCustomEntry(WORKMAP_ENTRY_TYPE, snapshot);
@@ -50,6 +48,7 @@ describe("workmap extension lifecycle", () => {
 		expect(open).toHaveBeenCalledWith("/sessions/source.jsonl");
 		expect(appendEntry).toHaveBeenCalledWith(WORKMAP_ENTRY_TYPE, {
 			version: WORKMAP_SNAPSHOT_VERSION,
+			goal: snapshot.goal,
 			nodes: snapshot.nodes,
 		});
 	});
@@ -99,6 +98,24 @@ describe("workmap extension lifecycle", () => {
 			expect(result?.message).toBeUndefined();
 		});
 
+		it("injects the goal header once set_goal distills it", async () => {
+			const { handlers, context, getTool } = setup();
+			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
+
+			const fresh = await beforeAgentStart(handlers, context);
+			expect(fresh?.message).toBeUndefined();
+
+			await getTool("set_goal").execute(
+				"call",
+				{ title: "Stop random logouts", label: "long-term" },
+				undefined,
+				undefined,
+				undefined,
+			);
+			const withGoal = await beforeAgentStart(handlers, context);
+			expect(withGoal?.message?.content).toContain("goal [long-term]: Stop random logouts");
+		});
+
 		it("re-injects every run and escalates when the map goes stale", async () => {
 			const { handlers, context, getTool } = setup();
 			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
@@ -121,6 +138,11 @@ describe("workmap extension lifecycle", () => {
 			const afterDrift = await beforeAgentStart(handlers, context);
 			expect(afterDrift?.message?.content).toContain("4 user prompts stale");
 
+			// set_goal is also not a rewrite: the counter keeps counting.
+			await getTool("set_goal").execute("call", { title: "Stop random logouts" }, undefined, undefined, undefined);
+			const afterGoal = await beforeAgentStart(handlers, context);
+			expect(afterGoal?.message?.content).toContain("5 user prompts stale");
+
 			// Only a full re-declaration re-anchors the map.
 			await set(baseMap);
 			const reasserted = await beforeAgentStart(handlers, context);
@@ -138,22 +160,9 @@ describe("workmap extension lifecycle", () => {
 			expect(result?.message?.content).toContain("3 user prompts stale");
 		});
 
-		it("rejects a set without a long-term goal and an add_drift on an empty map", async () => {
+		it("lets a drift open an empty map and carries the goal across rewrites", async () => {
 			const { handlers, context, getTool } = setup();
 			await handlers.get("session_start")?.({ type: "session_start", reason: "new" } as never, context);
-
-			const badSet = (await getTool("workmap").execute(
-				"call",
-				{ set: [{ type: "task", title: "No goals" }] },
-				undefined,
-				undefined,
-				undefined,
-			)) as {
-				isError: boolean;
-				details: { error?: string };
-			};
-			expect(badSet.isError).toBe(true);
-			expect(badSet.details.error).toContain("at least one goal");
 
 			const drift = (await getTool("add_drift").execute(
 				"call",
@@ -161,12 +170,15 @@ describe("workmap extension lifecycle", () => {
 				undefined,
 				undefined,
 				undefined,
-			)) as {
-				isError: boolean;
-				details: { error?: string };
-			};
-			expect(drift.isError).toBe(true);
-			expect(drift.details.error).toContain("empty");
+			)) as { isError: boolean; details: { error?: string } };
+			expect(drift.isError).toBe(false);
+			expect(drift.details.error).toBeUndefined();
+
+			await getTool("set_goal").execute("call", { title: "Stop random logouts" }, undefined, undefined, undefined);
+			await getTool("workmap").execute("call", { set: [] }, undefined, undefined, undefined);
+			const injected = await beforeAgentStart(handlers, context);
+			expect(injected?.message?.content).toContain("goal: Stop random logouts");
+			expect(injected?.message?.content).not.toContain("drift [detected]");
 		});
 
 		it("does not re-anchor the map on a rejected set", async () => {
@@ -178,7 +190,15 @@ describe("workmap extension lifecycle", () => {
 			// A rejected set changed nothing: it must not reset the stale counter.
 			await getTool("workmap").execute(
 				"call",
-				{ set: [{ type: "task", title: "Hand-edited, no goals" }] },
+				{
+					set: [
+						{
+							type: "task",
+							title: "Too deep",
+							children: [{ type: "task", title: "Child", children: [{ type: "task", title: "Grandchild" }] }],
+						},
+					],
+				},
 				undefined,
 				undefined,
 				undefined,

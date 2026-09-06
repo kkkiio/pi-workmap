@@ -15,11 +15,11 @@ Workmap 是 editor 上方的常驻 widget，只有一种渲染：完整树。容
 ⎇ Drift
 ```
 
-用色遵循 Pi 和 `pi-tasks` 的克制方式：正文与普通 glyph 使用默认文字色；Goal / Decision glyph 使用 accent，Drift 使用 error；`status` 与 tree connector 使用 dim。灰色只表示辅助信息，不额外编码领域状态。
+用色遵循 Pi 和 `pi-tasks` 的克制方式：正文与普通 glyph 使用默认文字色；Goal / Decision glyph 使用 accent，Drift 使用 error；`label` 与 tree connector 使用 dim。灰色只表示辅助信息，不额外编码领域状态。
 
 颜色表达的是"晚看的代价"而非严重程度：Drift 是唯一成本随延迟增长的信号——用户没看到的每一分钟，Agent 都可能带着偏差继续干活——所以它用最抢眼的 error 色；accent 用于定位方向（Goal / Decision）。Drift 本身只是"提请确认"：用户可以纠正、接受，或等待相关工作自然完成。如果实践中 Drift 频繁出现，应先修 Agent 的过度报告，而不是调低颜色。
 
-克制同样适用于文本：widget 只承载结构，不承载解释。具体含义是——屏上每一行文字都必须是一个信号本身（title 或 status），而不是关于信号的解释：没有图例、没有栏目标题、没有“what/why/how”式说明，意义全部由 glyph、颜色和 tree 结构承载。这样要求的原因：widget 是被动觉察表面，一场 session 里被扫过几十次，多一个字的解释都是几十次的重复阅读成本；而需要解释的内容（trade-off、原因、背景）在对话里已经有了家。Agent 天然倾向于在 UI 上补充说明文字，所以克制不靠 prompt 自觉，而靠结构保证——tool schema 和渲染管线里根本没有解释性文字的槽位，想写也无处可写。
+克制同样适用于文本：widget 只承载结构，不承载解释。具体含义是——屏上每一行文字都必须是一个信号本身（title 或 label），而不是关于信号的解释：没有图例、没有栏目标题、没有“what/why/how”式说明，意义全部由 glyph、颜色和 tree 结构承载。这样要求的原因：widget 是被动觉察表面，一场 session 里被扫过几十次，多一个字的解释都是几十次的重复阅读成本；而需要解释的内容（trade-off、原因、背景）在对话里已经有了家。Agent 天然倾向于在 UI 上补充说明文字，所以克制不靠 prompt 自觉，而靠结构保证——tool schema 和渲染管线里根本没有解释性文字的槽位，想写也无处可写。
 
 ## Generic map
 
@@ -76,6 +76,6 @@ Drift 出现意味着 Agent 已识别真实不一致；它不是泛化的风险�
 - 单一完整树视图：Goal 类型的 root 置顶，drift 紧随其后（方向之后先看偏差），其余 root 保持插入序；没有 compact/expanded 切换，也不复用 `app.tools.expand`。
 - header 的 drift 计数使用 error 色；drift 是唯一"晚看比早看贵"的信号，显著性必须第一。
 - 所有 glyph 统一按两个终端列宽的单元格渲染，宽于单列的 glyph 也与其他 glyph 的 title 保持同列左对齐。
-- `status` 只在 title 至少保留 20 列时右对齐；窄终端先隐藏 status，优先保留 title。
+- `label` 只在 title 至少保留 20 列时右对齐；窄终端先隐藏 label，优先保留 title。
 - node title 保持单行可扫读；解释、trade-off 与原因住在对话里。
 - 只有嵌套 `children` 构成的 single-parent tree；不显示 refs 或 DAG edges。
