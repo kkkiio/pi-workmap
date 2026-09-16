@@ -64,7 +64,7 @@ describe("workmap tools and lifecycle", () => {
 		await app.call("set_goal", goal);
 		await app.call("restate", { set: Array.from({ length: 8 }, (_, i) => ({ ...task, title: `Task ${i}` })) });
 		const result = await app.call("add_drift", { title: "Off course" });
-		expect(result.content).toEqual([{ type: "text", text: "Updated workmap · 10 signals" }]);
+		expect(result.content).toEqual([{ type: "text", text: "Updated workmap · 10 nodes" }]);
 		const details = result.details as WorkmapToolDetails;
 		expect(details.nodes).toHaveLength(9);
 		await app.event("session_tree");
@@ -95,7 +95,7 @@ describe("workmap tools and lifecycle", () => {
 		await app.event("session_start", { reason: "new" });
 		expect(await app.event("before_agent_start")).toEqual({});
 		const result = await app.call("set_goal", goal);
-		expect(result.content).toEqual([{ type: "text", text: "Updated workmap · 1 signal" }]);
+		expect(result.content).toEqual([{ type: "text", text: "Updated workmap · 1 node" }]);
 		expect(await app.event("before_agent_start")).toMatchObject({
 			message: {
 				content: "<workmap-state>\ngoal [long-term]: Stop random logouts\n</workmap-state>",

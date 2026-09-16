@@ -52,7 +52,7 @@ describe("WorkmapWidget", () => {
 			{ type: "task", title: "Extra task three" },
 		);
 		const { lines } = renderWidget();
-		expect(lines).toHaveLength(1 + 9);
+		expect(lines).toHaveLength(9);
 		expect(lines.join("\n")).toMatchSnapshot();
 		nodes.splice(4, 3);
 	});
