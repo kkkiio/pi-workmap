@@ -1,0 +1,181 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`agent-facing tool surface > keeps schemas, descriptions and guidelines stable (snapshot) 1`] = `
+[
+  {
+    "description": "Restate the signal tree the user reads to follow your direction.",
+    "label": "Restate",
+    "name": "restate",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "set": {
+          "description": "The COMPLETE signal tree, replacing everything — restate what still matters and drop the rest. An empty array clears the signals.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "children": {
+                "description": "Supporting evidence, one level deep",
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "label": {
+                      "description": "Optional short label. decision: considering/chosen; understanding: confirmed/ruled out; task: pending/active",
+                      "maxLength": 24,
+                      "type": "string",
+                    },
+                    "title": {
+                      "description": "One scannable sentence",
+                      "maxLength": 120,
+                      "minLength": 1,
+                      "type": "string",
+                    },
+                    "type": {
+                      "anyOf": [
+                        {
+                          "const": "understanding",
+                          "description": "A fact, synthesis, inference, or hypothesis the Agent currently uses; counterintuitive findings belong here",
+                          "type": "string",
+                        },
+                        {
+                          "const": "decision",
+                          "description": "A choice being deliberated or already made; title it as a question while considering, and once decided append the conclusion (\`Where should X live? → on the server\`)",
+                          "type": "string",
+                        },
+                        {
+                          "const": "option",
+                          "description": "A considered alternative under its parent decision",
+                          "type": "string",
+                        },
+                        {
+                          "const": "task",
+                          "description": "An action the Agent intends or is doing",
+                          "type": "string",
+                        },
+                        {
+                          "const": "drift",
+                          "description": "A mismatch with the declared plan",
+                          "type": "string",
+                        },
+                      ],
+                    },
+                  },
+                  "required": [
+                    "type",
+                    "title",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "label": {
+                "description": "Optional short label. decision: considering/chosen; understanding: confirmed/ruled out; task: pending/active",
+                "maxLength": 24,
+                "type": "string",
+              },
+              "title": {
+                "description": "One scannable sentence",
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string",
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "const": "understanding",
+                    "description": "A fact, synthesis, inference, or hypothesis the Agent currently uses; counterintuitive findings belong here",
+                    "type": "string",
+                  },
+                  {
+                    "const": "decision",
+                    "description": "A choice being deliberated or already made; title it as a question while considering, and once decided append the conclusion (\`Where should X live? → on the server\`)",
+                    "type": "string",
+                  },
+                  {
+                    "const": "task",
+                    "description": "An action the Agent intends or is doing",
+                    "type": "string",
+                  },
+                  {
+                    "const": "drift",
+                    "description": "A mismatch with the declared plan",
+                    "type": "string",
+                  },
+                ],
+              },
+            },
+            "required": [
+              "type",
+              "title",
+            ],
+            "type": "object",
+          },
+          "type": "array",
+        },
+      },
+      "required": [
+        "set",
+      ],
+      "type": "object",
+    },
+    "promptGuidelines": [
+      "While investigating: write each finding as an understanding, and restate the moment your leading suspicion appears, shifts, or is ruled out — before the next probe. Keep the leading suspicion first.",
+      "While weighing options: make the choice a decision titled as a question, with its alternatives as options beneath it; don't settle it silently.",
+    ],
+    "promptSnippet": null,
+  },
+  {
+    "description": "Distill the user's ultimate want — the destination, never the route. The goal outlives signal rewrites.",
+    "label": "Set goal",
+    "name": "set_goal",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "description": "Optional short label, e.g. long-term",
+          "maxLength": 24,
+          "type": "string",
+        },
+        "title": {
+          "description": "The destination, one scannable sentence",
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "title",
+      ],
+      "type": "object",
+    },
+    "promptGuidelines": [
+      "You MUST distill the user's ultimate want into the goal via \`set_goal\` before acting on a new or changed request — the destination, never the route; update it only when your reading of their intent deepens or the user corrects direction; the goal outlives signal rewrites.",
+    ],
+    "promptSnippet": null,
+  },
+  {
+    "description": "Report a mid-task course change as a drift.",
+    "label": "Add drift",
+    "name": "add_drift",
+    "parameters": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "description": "The mismatch, one scannable sentence",
+          "maxLength": 120,
+          "minLength": 1,
+          "type": "string",
+        },
+      },
+      "required": [
+        "title",
+      ],
+      "type": "object",
+    },
+    "promptGuidelines": [
+      "You MUST add drift via \`add_drift\` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When it resolves, record any lasting conclusion as a decision or understanding and drop the drift in your next rewrite.",
+    ],
+    "promptSnippet": null,
+  },
+]
+`;

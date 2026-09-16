@@ -28,6 +28,8 @@ describe("WorkmapState", () => {
 		{ goal: { title: "x".repeat(121) }, nodes: [] },
 		{ goal: { title: "Goal", label: "x".repeat(25) }, nodes: [] },
 		{ nodes: [{ type: "unknown", title: "Invalid type" }] },
+		{ nodes: [{ type: "option", title: "Orphan option" }] },
+		{ nodes: [{ type: "task", title: "Parent", children: [{ type: "option", title: "Misfiled option" }] }] },
 		{ nodes: [{ type: "task", title: "Root", children: [{ type: "task", title: "Child", children: [] }] }] },
 	])("rejects invalid declarations without changing accepted state: %j", (invalid) => {
 		const state = new WorkmapState();
@@ -36,7 +38,7 @@ describe("WorkmapState", () => {
 		expect(state.view()).toEqual(base);
 	});
 
-	it("normalizes every signal before persistence and restoration", () => {
+	it("normalizes every node before persistence and restoration", () => {
 		const state = new WorkmapState();
 		const session = SessionManager.inMemory();
 		state.set({
@@ -45,7 +47,7 @@ describe("WorkmapState", () => {
 				{
 					type: "task",
 					title: " Parent ",
-					children: [{ type: "understanding", title: " Shared\ncache ", label: " assumed " }],
+					children: [{ type: "understanding", title: " Shared\ncache ", label: " ruled out " }],
 				},
 			],
 		});
@@ -65,13 +67,13 @@ describe("WorkmapState", () => {
 				{
 					type: "task",
 					title: "Parent",
-					children: [{ type: "understanding", title: "Shared cache", label: "assumed" }],
+					children: [{ type: "understanding", title: "Shared cache", label: "ruled out" }],
 				},
 			],
 		});
 	});
 
-	it.each([0, 5, 9])("round-trips a ten-signal map with %i children", (children) => {
+	it.each([0, 5, 9])("round-trips a ten-node map with %i children", (children) => {
 		const state = new WorkmapState();
 		const nodes: WorkmapView["nodes"] = Array.from({ length: 10 - children }, (_, i) => ({
 			type: "task",

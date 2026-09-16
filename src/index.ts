@@ -5,14 +5,14 @@ import { renderStateMessage } from "./context-message.js";
 import { GoalSchema, RootSchema } from "./node-types.js";
 import { persistSnapshot, WORKMAP_SNAPSHOT_VERSION } from "./session-entry.js";
 import { WorkmapState } from "./state.js";
-import { countNodes, type WorkmapChild, type WorkmapToolDetails } from "./types.js";
+import { countNodes, type WorkmapChild, type WorkmapRoot, type WorkmapToolDetails } from "./types.js";
 import { glyphCell, PRESENTATION, WorkmapWidget } from "./widget.js";
 
 const SetParams = Type.Object(
 	{
 		set: Type.Array(RootSchema, {
 			description:
-				"The COMPLETE signal tree, replacing everything. An empty array clears the signals; the goal is separate and managed by set_goal.",
+				"The COMPLETE signal tree, replacing everything — restate what still matters and drop the rest. An empty array clears the signals.",
 		}),
 	},
 	{ additionalProperties: false },
@@ -82,7 +82,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		const total = countNodes(current);
 		const text = error
 			? `Workmap update rejected: ${error}`
-			: `${changed ? "Updated" : "No change to"} workmap · ${total} signal${total === 1 ? "" : "s"}`;
+			: `${changed ? "Updated" : "No change to"} workmap · ${total} node${total === 1 ? "" : "s"}`;
 		const details: WorkmapToolDetails = {
 			version: WORKMAP_SNAPSHOT_VERSION,
 			action,
@@ -96,14 +96,10 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "restate",
 		label: "Restate",
-		description: "Restate the COMPLETE signal tree, replacing everything. An empty array clears the signals.",
-		promptSnippet:
-			"Maintain the live workmap that lets the user inspect your current direction and follow your operational mental model.",
+		description: "Restate the signal tree the user reads to follow your direction.",
 		promptGuidelines: [
-			"You MUST restate the complete signal map before your first action after every user prompt; an empty array clears the signals.",
-			'Use decision for deliberation or commitments — title a question while deliberating, and once decided append the conclusion ("Where should X live? → on the server"); use option only for considered alternatives under their decision.',
-			"Use understanding for current facts, syntheses, and hypotheses; counterintuitive findings belong here precisely because they are easy to lose — label assumed until verified.",
-			"Use task for actions you intend, are doing, or have done; a done title records side effects — what changed, what ran.",
+			"While investigating: write each finding as an understanding, and restate the moment your leading suspicion appears, shifts, or is ruled out — before the next probe. Keep the leading suspicion first.",
+			"While weighing options: make the choice a decision titled as a question, with its alternatives as options beneath it; don't settle it silently.",
 		],
 		parameters: SetParams,
 		executionMode: "sequential",
@@ -113,8 +109,9 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 			return finish("set", result);
 		},
 		renderCall(args, theme) {
-			const additions = (args as { set?: unknown[] }).set?.length ?? 0;
-			return new Text(theme.fg("toolTitle", theme.bold("restate ")) + theme.fg("muted", `${additions} signals`), 0, 0);
+			const set = (args as { set?: WorkmapRoot[] }).set ?? [];
+			const nodes = countNodes({ nodes: set });
+			return new Text(theme.fg("toolTitle", theme.bold("restate ")) + theme.fg("muted", `${nodes} nodes`), 0, 0);
 		},
 		renderResult(result, { expanded }, theme) {
 			return renderDetails(result, expanded, theme);
@@ -126,7 +123,6 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 		label: "Set goal",
 		description:
 			"Distill the user's ultimate want — the destination, never the route. The goal outlives signal rewrites.",
-		promptSnippet: "Distill the user's ultimate want into the goal row before acting on a new or changed request.",
 		promptGuidelines: [
 			"You MUST distill the user's ultimate want into the goal via `set_goal` before acting on a new or changed request — the destination, never the route; update it only when your reading of their intent deepens or the user corrects direction; the goal outlives signal rewrites.",
 		],
@@ -148,8 +144,7 @@ export default function workmapExtension(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "add_drift",
 		label: "Add drift",
-		description: "Report a mid-task course change as a drift, hoisted below the goal row.",
-		promptSnippet: "Report a mid-task course change as drift the moment it happens.",
+		description: "Report a mid-task course change as a drift.",
 		promptGuidelines: [
 			"You MUST add drift via `add_drift` the moment you change course or start working around a problem mid-task — for a mismatch with the declared plan. When it resolves, record any lasting conclusion as a decision or understanding and drop the drift in your next rewrite.",
 		],
@@ -204,7 +199,7 @@ function renderDetails(
 		}
 		text += `\n${rows.join("\n")}`;
 	} else {
-		text += theme.fg("dim", ` · ${countNodes(details)} signals`);
+		text += theme.fg("dim", ` · ${countNodes(details)} nodes`);
 	}
 	return new Text(text, 0, 0);
 }

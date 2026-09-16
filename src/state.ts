@@ -38,31 +38,34 @@ export class WorkmapState {
 
 	private validate(value: unknown): WorkmapView | string {
 		if (!schema.Check(value)) {
-			return "The workmap violates its schema — check types, titles, labels and depth";
+			return "The workmap violates its schema — check types, titles, labels, depth, and that an option sits under its decision";
 		}
 		const next = structuredClone(value);
-		const signals = [
+		const nodes = [
 			...(next.goal ? [next.goal] : []),
 			...next.nodes.flatMap((root) => [root, ...(root.children ?? [])]),
 		];
-		for (const signal of signals) {
-			signal.title = signal.title
+		for (const node of nodes) {
+			node.title = node.title
 				.replace(/[\u0000-\u001f\u007f]/g, " ")
 				.replace(/\s+/g, " ")
 				.trim();
-			if (!signal.title) return "invalid title";
-			const label = signal.label
+			if (!node.title) return "invalid title";
+			const label = node.label
 				?.replace(/[\u0000-\u001f\u007f]/g, " ")
 				.replace(/\s+/g, " ")
 				.trim();
-			if (label) signal.label = label;
-			else delete signal.label;
+			if (label) node.label = label;
+			else delete node.label;
 		}
 		for (const root of next.nodes) {
 			if (root.children?.length === 0) delete root.children;
+			if (root.type !== "decision" && root.children?.some((child) => child.type === "option")) {
+				return "Options only belong under a decision — move the option under its decision, or restate it as an understanding";
+			}
 		}
 		if (countNodes(next) > MAX_WORKMAP_NODES) {
-			return `The map is limited to ${MAX_WORKMAP_NODES} signals (goal and children included) — keep the ones that matter most and restate`;
+			return `The map is limited to ${MAX_WORKMAP_NODES} nodes (goal and children included) — keep the ones that matter most and restate`;
 		}
 		return next;
 	}

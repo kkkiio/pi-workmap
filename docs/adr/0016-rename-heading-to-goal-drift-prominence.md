@@ -20,11 +20,11 @@ ADR 0008 曾基于"goal 零写入"的观测把 `goal` 改名为 `heading`。此�
 
 ## Evidence（受控回放 ablation）
 
-pi-structural-edit 仓库在原 session 起点的快照（624845e），回放原 session 的前 7 条用户 prompt（含多次相位切换与一次范围收回），kimi-coding/k3-256k、thinking high，双臂单变量对照：
+一个私有仓库在原 session 起点的快照，回放原 session 的前 7 条用户 prompt（含多次相位切换与一次范围收回），kimi-coding/k3-256k、thinking high，双臂单变量对照：
 
 - **heading 臂**：7 轮换 7 个锚——每轮把当前问题顶成锚并丢弃上一轮内容；t7 的 map 只剩一条 understanding。锚彻底失去"评价基准"的作用。
-- **goal 臂**：一锚贯穿 5 轮（"解释 matcher/replacement 现状，并给出两条跨层级匹配问题的处理方案"），t6 随意图加深更新为"……并评估修复路线"；瞬态查询（查 ast-grep clone）短暂试写为第二个 goal 后自行收回，归位 task。
-- **两臂均未写出 long-term intent**（如"改进 rewrite tool"）——长期意图的推断独立于命名，转入 open-questions 跟踪。
+- **goal 臂**：一锚贯穿 5 轮，t6 随意图加深而更新；瞬态查询（查某个 CLI 工具是否已安装）短暂试写为第二个 goal 后自行收回，归位 task。
+- **两臂均未写出 long-term intent**——长期意图的推断独立于命名，转入 open-questions 跟踪。
 - 观测到一例 status 误用（`goal|active`）；status 保持自由格式，观察是否复发。
 
 局限：ablation 是组合变量（词 + guideline），未拆分纯命名效应；n=1、单模型。

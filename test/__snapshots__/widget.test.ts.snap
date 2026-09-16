@@ -1,8 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`WorkmapWidget > drops labels before squeezing titles on narrow widths (snapshot) 1`] = `
-"Workmap · 6 signals ·[0m...[0m
-✦  Keep human and Age[0m...[0m
+"✦  Keep human and Age[0m...[0m
 ⎇  Implementation is [0m...[0m
 ◆  Use session-global[0m...[0m
 └─ ◎  Render the pers[0m...[0m
@@ -11,8 +10,7 @@ exports[`WorkmapWidget > drops labels before squeezing titles on narrow widths (
 `;
 
 exports[`WorkmapWidget > keeps labels right-aligned when there is room (snapshot) 1`] = `
-"Workmap · 6 signals · 1 drift
-✦  Keep human and Agent aligned                    long-term
+"✦  Keep human and Agent aligned                    long-term
 ⎇  Implementation is becoming a todo manager        detected
 ◆  Use session-global snapshots                       chosen
 └─ ◎  Render the persistent widget                    active
@@ -21,8 +19,7 @@ exports[`WorkmapWidget > keeps labels right-aligned when there is room (snapshot
 `;
 
 exports[`WorkmapWidget > renders past the former compact budget without hidden counts (snapshot) 1`] = `
-"Workmap · 9 signals · 1 drift
-✦  Keep human and Agent aligned                                      long-term
+"✦  Keep human and Agent aligned                                      long-term
 ⎇  Implementation is becoming a todo manager                          detected
 ◆  Use session-global snapshots                                         chosen
 └─ ◎  Render the persistent widget                                      active
@@ -34,8 +31,7 @@ exports[`WorkmapWidget > renders past the former compact budget without hidden c
 `;
 
 exports[`WorkmapWidget > renders the full tree at standard width (snapshot) 1`] = `
-"Workmap · 6 signals · 1 drift
-✦  Keep human and Agent aligned                                      long-term
+"✦  Keep human and Agent aligned                                      long-term
 ⎇  Implementation is becoming a todo manager                          detected
 ◆  Use session-global snapshots                                         chosen
 └─ ◎  Render the persistent widget                                      active
